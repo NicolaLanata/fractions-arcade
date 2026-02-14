@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtract Fractions (Step by Step)</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.65);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --bad:#dc2626;
+    --warn:#f59e0b;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+  }
+
+  #celebration-area{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:10;
+    overflow:hidden;
+  }
+
+  #app{ width:min(980px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:0.01em;
+  }
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+    user-select:none;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.04);
+  }
+
+  /* lights */
+  #lightsRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    margin: 6px 0 10px 0;
+  }
+  .light{
+    width:18px; height:18px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,0.16);
+    background:rgba(0,0,0,0.08);
+  }
+  .light.green{ background:rgba(22,163,74,0.75); border-color:rgba(22,163,74,0.55); }
+  .light.yellow{ background:rgba(245,158,11,0.85); border-color:rgba(245,158,11,0.65); }
+  .light.red{ background:rgba(220,38,38,0.78); border-color:rgba(220,38,38,0.60); }
+
+  /* problem row */
+  #problemRow{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    padding:6px 0 2px 0;
+  }
+  .op{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:34px;
+    color:rgba(37,99,235,0.75);
+  }
+  .frac{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-width:90px;
+  }
+  .frac .num, .frac .den{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:44px;
+    line-height:1.0;
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .frac .bar{
+    width:74px;
+    height:4px;
+    background:rgba(0,0,0,0.35);
+    border-radius:3px;
+    margin:8px 0;
+  }
+
+  /* stepper */
+  #stepper{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin: 10px 0 12px 0;
+  }
+  .stepItem{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,0.10);
+    background:rgba(0,0,0,0.02);
+    color:rgba(17,24,39,0.70);
+    font-weight:900;
+    user-select:none;
+  }
+  .stepItem .dot{
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.10);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:900;
+  }
+  .stepItem.active{
+    border-color: rgba(37,99,235,0.25);
+    background: rgba(37,99,235,0.06);
+    color: rgba(37,99,235,0.95);
+  }
+  .stepItem.active .dot{
+    background: rgba(37,99,235,0.85);
+    color:#fff;
+  }
+  .stepItem.done{
+    border-color: rgba(22,163,74,0.25);
+    background: rgba(22,163,74,0.06);
+    color: rgba(22,163,74,0.95);
+  }
+  .stepItem.done .dot{
+    background: rgba(22,163,74,0.85);
+    color:#fff;
+  }
+
+  /* step card */
+  #stepCard{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.02);
+  }
+  #stepTitle{
+    font-weight:900;
+    font-size:16px;
+    margin-bottom:4px;
+  }
+  #stepPrompt{
+    font-weight:900;
+    color:rgba(17,24,39,0.75);
+    margin-bottom:10px;
+    line-height:1.25;
+  }
+
+  .stepBlock{ display:none; }
+  .stepBlock.active{ display:block; }
+
+  .eqLine{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    margin: 6px 0;
+    font-weight:900;
+    color:rgba(17,24,39,0.80);
+  }
+  .mono{ font-family:var(--mono); }
+
+  .ans{
+    width:140px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:36px;
+    text-align:center;
+    border:2px solid rgba(37,99,235,0.35);
+    border-radius:12px;
+    padding:6px 6px;
+    outline:none;
+    background:#fff;
+  }
+  .ans.small{ width:120px; }
+  .ans:focus{
+    border-color: rgba(37,99,235,0.75);
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  }
+  .ans.disabled{ opacity:0.65; pointer-events:none; }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:12px;
+  }
+
+  #status{
+    text-align:center;
+    font-weight:900;
+    min-height:22px;
+    margin-top:10px;
+    color:var(--muted);
+  }
+  #status.good{ color:var(--good); }
+  #status.bad{ color:var(--bad); }
+  #status.warn{ color:rgba(161,98,7,0.95); }
+
+  #hintBox{
+    margin-top:10px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:#fff;
+    display:none;
+  }
+  #hintTitle{
+    font-size:12px;
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  #hintText{
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    line-height:1.25;
+  }
+
+  /* balloons */
+  .balloon{
+    position:absolute;
+    bottom:-100px;
+    width:40px;
+    height:50px;
+    border-radius:50%;
+    opacity:0.92;
+    animation: floatUp 3.8s ease-in forwards;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.18);
+  }
+  @keyframes floatUp{
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(18deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+
+<div id="celebration-area"></div>
+
+<div id="app">
+  <div id="top">
+    <div id="title">Subtract Fractions (Step by Step)</div>
+    <button id="newBtn" type="button">New problem</button>
+  </div>
+
+  <div id="panel">
+    <div id="problemRow" aria-label="problem">
+      <div class="frac" aria-label="first fraction">
+        <div class="num" id="aOut">—</div>
+        <div class="bar"></div>
+        <div class="den" id="bOut">—</div>
+      </div>
+      <div class="op">−</div>
+      <div class="frac" aria-label="second fraction">
+        <div class="num" id="cOut">—</div>
+        <div class="bar"></div>
+        <div class="den" id="dOut">—</div>
+      </div>
+    </div>
+
+    <div id="lightsRow" aria-label="progress lights"></div>
+
+    <div id="stepper" aria-label="steps">
+      <div class="stepItem active" id="st1"><div class="dot">1</div>Common denominator</div>
+      <div class="stepItem" id="st2"><div class="dot">2</div>Rewrite</div>
+      <div class="stepItem" id="st3"><div class="dot">3</div>Subtract</div>
+      <div class="stepItem" id="st4"><div class="dot">4</div>Simplify</div>
+    </div>
+
+    <div id="stepCard">
+      <div id="stepTitle">Step 1</div>
+      <div id="stepPrompt"></div>
+
+      <!-- Step 1 -->
+      <div class="stepBlock active" id="step1">
+        <div class="eqLine">
+          <span>Smallest denominator they can both use for</span>
+          <span class="mono" id="den1">—</span>
+          <span>and</span>
+          <span class="mono" id="den2">—</span>
+          <span>is</span>
+          <input id="cdIn" class="ans" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="common denominator input">
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="stepBlock" id="step2">
+        <div class="eqLine">
+          <div class="frac" aria-label="left original">
+            <div class="num" id="a2_left_num">—</div>
+            <div class="bar"></div>
+            <div class="den" id="a2_left_den">—</div>
+          </div>
+          <span class="op">=</span>
+          <div class="frac" aria-label="left rewritten">
+            <div class="num"><input id="aNewIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="left new numerator"></div>
+            <div class="bar"></div>
+            <div class="den" id="cdOut2a">—</div>
+          </div>
+        </div>
+
+        <div class="eqLine" style="margin-top:10px;">
+          <div class="frac" aria-label="right original">
+            <div class="num" id="c2_left_num">—</div>
+            <div class="bar"></div>
+            <div class="den" id="c2_left_den">—</div>
+          </div>
+          <span class="op">=</span>
+          <div class="frac" aria-label="right rewritten">
+            <div class="num"><input id="cNewIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="right new numerator"></div>
+            <div class="bar"></div>
+            <div class="den" id="cdOut2c">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="stepBlock" id="step3">
+        <div class="eqLine">
+          <div class="frac" aria-label="left converted">
+            <div class="num" id="aConvOut">—</div>
+            <div class="bar"></div>
+            <div class="den" id="cdOut3a">—</div>
+          </div>
+          <span class="op">−</span>
+          <div class="frac" aria-label="right converted">
+            <div class="num" id="cConvOut">—</div>
+            <div class="bar"></div>
+            <div class="den" id="cdOut3c">—</div>
+          </div>
+          <span class="op">=</span>
+          <div class="frac" aria-label="difference">
+            <div class="num"><input id="diffNumIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="difference numerator"></div>
+            <div class="bar"></div>
+            <div class="den" id="cdOut3diff">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="stepBlock" id="step4">
+        <div class="eqLine">
+          <div class="frac" aria-label="unsimplified difference">
+            <div class="num" id="diffNumOut4">—</div>
+            <div class="bar"></div>
+            <div class="den" id="diffDenOut4">—</div>
+          </div>
+          <span class="op">=</span>
+          <div class="frac" aria-label="simplified">
+            <div class="num"><input id="simpNumIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="simplified numerator"></div>
+            <div class="bar"></div>
+            <div class="den"><input id="simpDenIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="simplified denominator"></div>
+          </div>
+        </div>
+        <div class="eqLine" style="margin-top:10px; font-weight:900; color:rgba(17,24,39,0.70);">
+          <span>If it cannot be simplified, copy the same fraction.</span>
+        </div>
+      </div>
+
+      <div id="actions">
+        <button id="checkBtn" class="primary" type="button">Check</button>
+      </div>
+
+      <div id="status"></div>
+
+      <div id="hintBox">
+        <div id="hintTitle">Hint</div>
+        <div id="hintText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [2, 3, 4, 5, 6, 8, 10, 12];
+  const LCM_MAX = 60;
+
+  const celebrationArea = document.getElementById('celebration-area');
+  const lightsRow = document.getElementById('lightsRow');
+
+  const aOut = document.getElementById('aOut');
+  const bOut = document.getElementById('bOut');
+  const cOut = document.getElementById('cOut');
+  const dOut = document.getElementById('dOut');
+
+  const st1 = document.getElementById('st1');
+  const st2 = document.getElementById('st2');
+  const st3 = document.getElementById('st3');
+  const st4 = document.getElementById('st4');
+
+  const stepTitle = document.getElementById('stepTitle');
+  const stepPrompt = document.getElementById('stepPrompt');
+
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const step4 = document.getElementById('step4');
+
+  const cdIn = document.getElementById('cdIn');
+  const den1 = document.getElementById('den1');
+  const den2 = document.getElementById('den2');
+
+  const a2_left_num = document.getElementById('a2_left_num');
+  const a2_left_den = document.getElementById('a2_left_den');
+  const c2_left_num = document.getElementById('c2_left_num');
+  const c2_left_den = document.getElementById('c2_left_den');
+
+  const aNewIn = document.getElementById('aNewIn');
+  const cNewIn = document.getElementById('cNewIn');
+  const cdOut2a = document.getElementById('cdOut2a');
+  const cdOut2c = document.getElementById('cdOut2c');
+
+  const aConvOut = document.getElementById('aConvOut');
+  const cConvOut = document.getElementById('cConvOut');
+  const cdOut3a = document.getElementById('cdOut3a');
+  const cdOut3c = document.getElementById('cdOut3c');
+  const cdOut3diff = document.getElementById('cdOut3diff');
+  const diffNumIn = document.getElementById('diffNumIn');
+
+  const diffNumOut4 = document.getElementById('diffNumOut4');
+  const diffDenOut4 = document.getElementById('diffDenOut4');
+  const simpNumIn = document.getElementById('simpNumIn');
+  const simpDenIn = document.getElementById('simpDenIn');
+
+  const checkBtn = document.getElementById('checkBtn');
+  const newBtn = document.getElementById('newBtn');
+
+  const status = document.getElementById('status');
+  const hintBox = document.getElementById('hintBox');
+  const hintText = document.getElementById('hintText');
+
+  function triggerCelebration(){
+    const colors = ['#ef4444', '#2563eb', '#16a34a', '#f59e0b', '#a855f7'];
+    for (let i=0; i<15; i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.style.left = (Math.random()*94) + '%';
+      b.style.background = colors[Math.floor(Math.random()*colors.length)];
+      b.style.animationDuration = (3 + Math.random()*1.6) + 's';
+      celebrationArea.appendChild(b);
+      setTimeout(() => { try { b.remove(); } catch(_){} }, 5200);
+    }
+  }
+
+  function buildLights(){
+    lightsRow.innerHTML = "";
+    for (let i=0; i<4; i++){
+      const d = document.createElement('div');
+      d.className = "light";
+      d.id = `light_${i}`;
+      lightsRow.appendChild(d);
+    }
+  }
+  function colorForAttempts(at){
+    if (at <= 0) return "green";
+    if (at === 1) return "yellow";
+    return "red";
+  }
+  function refreshLights(){
+    for (let i=0; i<4; i++){
+      const el = document.getElementById(`light_${i}`);
+      if (!el) continue;
+      el.classList.remove('green','yellow','red');
+
+      const done = !!state.done[i];
+      const isCurrent = (i === (state.step - 1));
+      const at = state.attempts[i] || 0;
+
+      if (done){
+        el.classList.add(colorForAttempts(at));
+      } else if (isCurrent && at > 0){
+        el.classList.add(colorForAttempts(at));
+      }
+    }
+  }
+
+  function gcd(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while (b){ const t = a % b; a = b; b = t; }
+    return a || 1;
+  }
+  function lcm(a,b){ return Math.abs(a*b) / gcd(a,b); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+
+  function cleanDigits(el){
+    el.value = el.value.replace(/[^\d]/g,'');
+  }
+  [cdIn, aNewIn, cNewIn, diffNumIn, simpNumIn, simpDenIn].forEach(el => {
+    el.addEventListener('input', () => cleanDigits(el));
+  });
+
+  function setStatus(text, cls=""){
+    status.textContent = text;
+    status.classList.remove('good','bad','warn');
+    if (cls) status.classList.add(cls);
+  }
+  function showHint(text){
+    hintText.textContent = text;
+    hintBox.style.display = 'block';
+  }
+  function hideHint(){
+    hintBox.style.display = 'none';
+    hintText.textContent = "";
+  }
+
+  const state = {
+    a:0,b:0,c:0,d:0,
+    cd:0,
+    aConv:0,cConv:0,
+    diffNum:0,diffDen:0,
+    simpNum:0,simpDen:0,
+    step:1,
+    attempts:[0,0,0,0],
+    done:[false,false,false,false],
+  };
+
+  function updateStepper(){
+    const items = [st1,st2,st3,st4];
+    for (let i=0; i<4; i++){
+      items[i].classList.remove('active','done');
+      if (state.done[i]) items[i].classList.add('done');
+      if ((i+1) === state.step) items[i].classList.add('active');
+    }
+    refreshLights();
+  }
+
+  function showStep(n){
+    state.step = n;
+    updateStepper();
+    hideHint();
+    setStatus("");
+
+    step1.classList.remove('active');
+    step2.classList.remove('active');
+    step3.classList.remove('active');
+    step4.classList.remove('active');
+
+    if (n === 1){
+      stepTitle.textContent = "Step 1 of 4";
+      stepPrompt.textContent = "Find the smallest denominator they can both use (the smallest number that both denominators divide into).";
+      step1.classList.add('active');
+      cdIn.focus();
+    }
+    if (n === 2){
+      stepTitle.textContent = "Step 2 of 4";
+      stepPrompt.textContent = "Rewrite both fractions using the common denominator (multiply top and bottom by the same number).";
+      step2.classList.add('active');
+      aNewIn.focus();
+    }
+    if (n === 3){
+      stepTitle.textContent = "Step 3 of 4";
+      stepPrompt.textContent = "Now the denominators match. Subtract the numerators.";
+      step3.classList.add('active');
+      diffNumIn.focus();
+    }
+    if (n === 4){
+      stepTitle.textContent = "Step 4 of 4";
+      stepPrompt.textContent = "Simplify if possible (divide top and bottom by the same whole number).";
+      step4.classList.add('active');
+      simpNumIn.focus();
+    }
+  }
+
+  function fillProblemUI(){
+    aOut.textContent = String(state.a);
+    bOut.textContent = String(state.b);
+    cOut.textContent = String(state.c);
+    dOut.textContent = String(state.d);
+
+    den1.textContent = String(state.b);
+    den2.textContent = String(state.d);
+
+    // step 2 originals
+    a2_left_num.textContent = String(state.a);
+    a2_left_den.textContent = String(state.b);
+    c2_left_num.textContent = String(state.c);
+    c2_left_den.textContent = String(state.d);
+
+    // common denominator displays
+    cdOut2a.textContent = String(state.cd);
+    cdOut2c.textContent = String(state.cd);
+
+    // step 3 fixed denominators
+    cdOut3a.textContent = String(state.cd);
+    cdOut3c.textContent = String(state.cd);
+    cdOut3diff.textContent = String(state.cd);
+
+    // step 4 difference
+    diffNumOut4.textContent = String(state.diffNum);
+    diffDenOut4.textContent = String(state.diffDen);
+  }
+
+  function clearInputs(){
+    cdIn.value = "";
+    aNewIn.value = "";
+    cNewIn.value = "";
+    diffNumIn.value = "";
+    simpNumIn.value = "";
+    simpDenIn.value = "";
+  }
+
+  function generateProblem(){
+    for (let tries=0; tries<700; tries++){
+      let b = randChoice(DENOMS);
+      let d = randChoice(DENOMS);
+
+      let a = randInt(1, b-1);
+      let c = randInt(1, d-1);
+
+      if (gcd(a,b) !== 1) continue;
+      if (gcd(c,d) !== 1) continue;
+
+      let cd = lcm(b,d);
+      if (!Number.isFinite(cd) || cd > LCM_MAX) continue;
+
+      // convert
+      let aConv = a * (cd / b);
+      let cConv = c * (cd / d);
+
+      // ensure nonnegative result; swap if needed
+      if (aConv < cConv){
+        [a, c] = [c, a];
+        [b, d] = [d, b];
+
+        cd = lcm(b,d);
+        if (!Number.isFinite(cd) || cd > LCM_MAX) continue;
+
+        aConv = a * (cd / b);
+        cConv = c * (cd / d);
+
+        if (aConv < cConv) continue;
+      }
+
+      const diffNum = aConv - cConv;
+      const diffDen = cd;
+
+      const g = gcd(diffNum, diffDen);
+      const simpNum = diffNum / g;
+      const simpDen = diffDen / g;
+
+      state.a = a; state.b = b; state.c = c; state.d = d;
+      state.cd = cd;
+      state.aConv = aConv;
+      state.cConv = cConv;
+      state.diffNum = diffNum;
+      state.diffDen = diffDen;
+      state.simpNum = simpNum;
+      state.simpDen = simpDen;
+
+      state.step = 1;
+      state.attempts = [0,0,0,0];
+      state.done = [false,false,false,false];
+
+      clearInputs();
+      fillProblemUI();
+      showStep(1);
+      checkBtn.disabled = false;
+      checkBtn.textContent = "Check";
+      return;
+    }
+
+    // fallback: 3/4 - 1/2 = 1/4
+    state.a=3; state.b=4; state.c=1; state.d=2;
+    state.cd = lcm(4,2); // 4
+    state.aConv = 3;
+    state.cConv = 2;
+    state.diffNum = 1;
+    state.diffDen = 4;
+    state.simpNum = 1;
+    state.simpDen = 4;
+
+    state.step=1;
+    state.attempts=[0,0,0,0];
+    state.done=[false,false,false,false];
+
+    clearInputs();
+    fillProblemUI();
+    showStep(1);
+    checkBtn.disabled = false;
+    checkBtn.textContent = "Check";
+  }
+
+  function parseIntOrNull(s){
+    const t = (s || "").trim();
+    if (!t) return null;
+    const v = parseInt(t,10);
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function checkStep(){
+    if (state.step === 1){
+      const v = parseIntOrNull(cdIn.value);
+      if (v === null){
+        setStatus("Type a number first.", "warn");
+        return;
+      }
+      if (v === state.cd){
+        state.done[0] = true;
+        setStatus("Correct.", "good");
+        triggerCelebration();
+        showStep(2);
+        return;
+      }
+      state.attempts[0] += 1;
+      refreshLights();
+      setStatus("Not yet. Try again.", "warn");
+      showHint(`List multiples of ${state.b} and multiples of ${state.d} until you find the first number that appears in both lists.`);
+      return;
+    }
+
+    if (state.step === 2){
+      const v1 = parseIntOrNull(aNewIn.value);
+      const v2 = parseIntOrNull(cNewIn.value);
+      if (v1 === null || v2 === null){
+        setStatus("Fill both numerators first.", "warn");
+        return;
+      }
+      if (v1 === state.aConv && v2 === state.cConv){
+        state.done[1] = true;
+        setStatus("Correct.", "good");
+        triggerCelebration();
+
+        // fill step 3 displays
+        aConvOut.textContent = String(state.aConv);
+        cConvOut.textContent = String(state.cConv);
+
+        showStep(3);
+        return;
+      }
+      state.attempts[1] += 1;
+      refreshLights();
+      setStatus("Not yet. Try again.", "warn");
+      showHint("To change a denominator to the common denominator, multiply the bottom by a whole number. Multiply the top by the same number.");
+      return;
+    }
+
+    if (state.step === 3){
+      const v = parseIntOrNull(diffNumIn.value);
+      if (v === null){
+        setStatus("Type the numerator of the difference.", "warn");
+        return;
+      }
+      if (v === state.diffNum){
+        state.done[2] = true;
+        setStatus("Correct.", "good");
+        triggerCelebration();
+        showStep(4);
+        return;
+      }
+      state.attempts[2] += 1;
+      refreshLights();
+      setStatus("Not yet. Try again.", "warn");
+      showHint("When denominators match, you subtract the numerators and keep the same denominator.");
+      return;
+    }
+
+    if (state.step === 4){
+      const sn = parseIntOrNull(simpNumIn.value);
+      const sd = parseIntOrNull(simpDenIn.value);
+      if (sn === null || sd === null){
+        setStatus("Fill numerator and denominator.", "warn");
+        return;
+      }
+      if (sd <= 0){
+        setStatus("Use whole numbers (denominator must be positive).", "warn");
+        return;
+      }
+
+      // check equivalence by cross-multiplication
+      const left = sn * state.diffDen;
+      const right = state.diffNum * sd;
+
+      if (left === right && gcd(sn, sd) === 1){
+        state.done[3] = true;
+        updateStepper();
+        setStatus(`Done. Answer: ${sn}/${sd}.`, "good");
+        triggerCelebration();
+        hideHint();
+        checkBtn.disabled = true;
+        checkBtn.textContent = "Done";
+        return;
+      }
+
+      state.attempts[3] += 1;
+      refreshLights();
+      setStatus("Not yet. Try again.", "warn");
+      showHint("Try dividing the numerator and denominator by the same whole number (2, 3, 4, ...). If none works, the fraction is already simplified.");
+      return;
+    }
+  }
+
+  checkBtn.addEventListener('click', () => checkStep());
+  newBtn.addEventListener('click', () => generateProblem());
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){
+      if (document.activeElement === newBtn) return;
+      checkStep();
+    }
+  });
+
+  // init
+  buildLights();
+  generateProblem();
+})();
+</script>
+</body>
+</html>

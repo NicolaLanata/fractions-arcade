@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smallest Common Multiple</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.65);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --bad:#dc2626;
+    --warn:#f59e0b;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+  }
+  #app{ width:min(920px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:0.01em;
+  }
+  #meta{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+  .pill{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.04);
+    font-weight:900;
+    color:rgba(17,24,39,0.85);
+  }
+  .pill .lbl{
+    font-size:12px;
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  #timeOut{
+    font-family:var(--mono);
+    font-size:16px;
+    color:var(--accent);
+  }
+  #bestOut{
+    font-family:var(--mono);
+    font-size:13px;
+    color:rgba(17,24,39,0.80);
+    white-space:nowrap;
+  }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.04);
+  }
+
+  #lights{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin: 4px 0 10px 0;
+  }
+  .light{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.10);
+    border:1px solid rgba(0,0,0,0.12);
+  }
+  .light.green{ background:rgba(22,163,74,0.85); border-color:rgba(22,163,74,0.35); }
+  .light.yellow{ background:rgba(245,158,11,0.85); border-color:rgba(245,158,11,0.35); }
+  .light.red{ background:rgba(220,38,38,0.85); border-color:rgba(220,38,38,0.35); }
+
+  /* persistent clue line */
+  #clue{
+    font-weight:900;
+    color:rgba(17,24,39,0.80);
+    margin: 6px 0 10px 0;
+    min-height: 24px;
+  }
+
+  #eqWrap{
+    display:flex;
+    justify-content:center;
+    margin: 6px 0 10px 0;
+  }
+  .eq{
+    display:flex;
+    align-items:flex-end;
+    gap:14px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .pair{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:54px;
+    line-height:1.0;
+  }
+  .pair .and{
+    font-size:30px;
+    color:rgba(37,99,235,0.70);
+    font-weight:900;
+    margin-bottom:6px;
+  }
+  .arrow{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:34px;
+    color:rgba(37,99,235,0.75);
+    margin-bottom:10px;
+  }
+  .ansCol{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    min-width:160px;
+  }
+  .ans{
+    width:150px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:44px;
+    text-align:center;
+    border:2px solid rgba(37,99,235,0.35);
+    border-radius:12px;
+    padding:6px 6px;
+    outline:none;
+    background:#fff;
+  }
+  .ans:focus{
+    border-color: rgba(37,99,235,0.75);
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  }
+  .ans.disabled{
+    opacity:0.65;
+    pointer-events:none;
+  }
+  .ansLbl{
+    font-size:12px;
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    text-align:center;
+  }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    margin-top:10px;
+  }
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+    user-select:none;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button.good{
+    background:var(--good);
+    color:white;
+    border-color:rgba(22,163,74,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #feedback{
+    text-align:center;
+    font-weight:900;
+    min-height:22px;
+    margin-top:10px;
+    color:var(--muted);
+  }
+  #feedback.good{ color:var(--good); }
+  #feedback.bad{ color:var(--bad); }
+  #feedback.warn{ color:rgba(161,98,7,0.95); }
+
+  #infoBox{
+    margin-top:12px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:rgba(0,0,0,0.02);
+    display:none;
+  }
+  #infoTitle{
+    font-size:12px;
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  #infoText{
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    line-height:1.25;
+    margin-bottom:10px;
+  }
+
+  .multTable{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .multRow{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .multLbl{
+    min-width:140px;
+    font-weight:900;
+    color:rgba(17,24,39,0.70);
+  }
+  .multList{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    flex:1 1 auto;
+  }
+  .multNum{
+    font-family:var(--mono);
+    font-weight:900;
+    padding:4px 8px;
+    border:1px solid rgba(0,0,0,0.10);
+    border-radius:10px;
+    background:#fff;
+    color:rgba(17,24,39,0.75);
+  }
+  .multNum.common{
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: rgba(37,99,235,0.85);
+    color: rgba(37,99,235,0.95);
+    border-color: rgba(37,99,235,0.18);
+    background: rgba(37,99,235,0.05);
+  }
+
+  /* Balloons celebration (same idea as sum_mission) */
+  .balloon{
+    position:absolute;
+    bottom:-100px;
+    width:40px;
+    height:50px;
+    border-radius:50%;
+    opacity:0.9;
+    animation: floatUp 4s ease-in infinite;
+    z-index:5;
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform: translateY(-120vh) rotate(20deg); opacity:0; }
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+<div id="app">
+  <div id="top">
+    <div id="title">Smallest Common Multiple</div>
+    <div id="meta">
+      <div class="pill" title="Best run (correctness first, then time)">
+        <div class="lbl">Best</div>
+        <div id="bestOut">—</div>
+      </div>
+      <div class="pill" title="Time (tie-break only)">
+        <div class="lbl">Time</div>
+        <div id="timeOut">0:00.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="lights"></div>
+
+    <div id="clue"></div>
+
+    <div id="eqWrap">
+      <div class="eq" aria-label="smallest common multiple question">
+        <div class="pair" aria-label="numbers">
+          <span id="aOut">—</span>
+          <span class="and">and</span>
+          <span id="bOut">—</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="ansCol">
+          <input id="ansIn" class="ans" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="answer">
+          <div class="ansLbl">smallest common multiple</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="actions">
+      <button id="checkBtn" class="primary" type="button">Check</button>
+      <button id="nextBtn" class="good" type="button" style="display:none;">Next</button>
+      <button id="againBtn" type="button" style="display:none;">Play again</button>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div id="infoBox">
+      <div id="infoTitle">Hint</div>
+      <div id="infoText"></div>
+      <div id="multTable" class="multTable"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const Q_COUNT = 5;
+  const A_RANGE = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const DISPLAY_CAP = 300;
+
+  // stable key (do not rename)
+  const bestKey = "common_multiples_best_v1";
+
+  const lightsRow = document.getElementById('lights');
+  const clueEl = document.getElementById('clue');
+
+  const aOut = document.getElementById('aOut');
+  const bOut = document.getElementById('bOut');
+  const ansIn = document.getElementById('ansIn');
+
+  const checkBtn = document.getElementById('checkBtn');
+  const nextBtn  = document.getElementById('nextBtn');
+  const againBtn = document.getElementById('againBtn');
+
+  const feedbackEl = document.getElementById('feedback');
+
+  const infoBox = document.getElementById('infoBox');
+  const infoTitle = document.getElementById('infoTitle');
+  const infoText = document.getElementById('infoText');
+  const multTable = document.getElementById('multTable');
+
+  const timeOut = document.getElementById('timeOut');
+  const bestOut = document.getElementById('bestOut');
+
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function gcd(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while (b){ const t = a % b; a = b; b = t; }
+    return a || 1;
+  }
+  function lcm(a,b){
+    return Math.abs(a*b) / gcd(a,b);
+  }
+
+  function fmtTime(ms){
+    const s = ms/1000;
+    const m = Math.floor(s/60);
+    const sec = s - 60*m;
+    const secInt = Math.floor(sec);
+    const tenth = Math.floor((sec-secInt)*10);
+    return `${m}:${String(secInt).padStart(2,'0')}.${tenth}`;
+  }
+
+  function setFeedback(text, cls=""){
+    feedbackEl.textContent = text;
+    feedbackEl.classList.remove('good','bad','warn');
+    if (cls) feedbackEl.classList.add(cls);
+  }
+
+  function cleanDigits(el){
+    el.value = el.value.replace(/[^\d]/g,'');
+  }
+  ansIn.addEventListener('input', () => cleanDigits(ansIn));
+
+  function lockInput(){ ansIn.classList.add('disabled'); }
+  function unlockInput(){ ansIn.classList.remove('disabled'); }
+
+  function readAnswer(){
+    const s = ansIn.value.trim();
+    if (!s) return null;
+    const v = parseInt(s,10);
+    if (!Number.isFinite(v)) return null;
+    return v;
+  }
+
+  function makeLight(color){
+    const d = document.createElement('div');
+    d.className = 'light';
+    if (color) d.classList.add(color);
+    return d;
+  }
+  function refreshLights(){
+    lightsRow.innerHTML = '';
+    for (let i=0; i<Q_COUNT; i++){
+      const c = state.lights[i];
+      lightsRow.appendChild(makeLight(c === 'blank' ? '' : c));
+    }
+  }
+  function mark(color){
+    state.lights[state.qIndex] = color;
+    refreshLights();
+  }
+
+  // Best record
+  function loadBest(){
+    try{
+      const raw = localStorage.getItem(bestKey);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!Number.isFinite(obj.greens) || !Number.isFinite(obj.yellows) || !Number.isFinite(obj.timeMs)) return null;
+      return obj;
+    } catch(_){ return null; }
+  }
+  function saveBest(rec){
+    try{ localStorage.setItem(bestKey, JSON.stringify(rec)); } catch(_){}
+  }
+  function bestLine(rec){
+    if (!rec) return "—";
+    const reds = Q_COUNT - rec.greens - rec.yellows;
+    return `${rec.greens}G ${rec.yellows}Y ${reds}R • ${fmtTime(rec.timeMs)}`;
+  }
+  function isBetter(a,b){
+    if (!b) return true;
+    if (a.greens !== b.greens) return a.greens > b.greens;
+    if (a.yellows !== b.yellows) return a.yellows > b.yellows;
+    return a.timeMs < b.timeMs;
+  }
+
+  function counts(){
+    let g=0,y=0,r=0;
+    for (const c of state.lights){
+      if (c==='green') g++;
+      else if (c==='yellow') y++;
+      else if (c==='red') r++;
+    }
+    return {g,y,r};
+  }
+
+  // Timer
+  function startTimer(){
+    if (state.timerId) return;
+    state.t0 = performance.now() - state.elapsedMs;
+    state.timerId = setInterval(() => {
+      if (!state.running) return;
+      state.elapsedMs = performance.now() - state.t0;
+      timeOut.textContent = fmtTime(state.elapsedMs);
+    }, 50);
+  }
+  function stopTimer(){
+    state.running = false;
+    if (state.timerId){
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+  }
+
+  // Celebration (balloons)
+  function ensureCelebrationArea(){
+    let area = document.getElementById("celebration-area");
+    if (area) return area;
+    area = document.createElement("div");
+    area.id = "celebration-area";
+    area.style.position = "fixed";
+    area.style.top = "0";
+    area.style.left = "0";
+    area.style.width = "100%";
+    area.style.height = "100%";
+    area.style.pointerEvents = "none";
+    area.style.zIndex = "1";
+    document.body.insertBefore(area, document.body.firstChild);
+    return area;
+  }
+  function triggerCelebration(){
+    const area = ensureCelebrationArea();
+    const colors = [
+      "rgba(231,76,60,0.95)",
+      "rgba(52,152,219,0.95)",
+      "rgba(46,204,113,0.95)",
+      "rgba(241,196,15,0.95)",
+      "rgba(155,89,182,0.95)"
+    ];
+    const count = 15;
+    for (let i=0; i<count; i++){
+      const b = document.createElement("div");
+      b.className = "balloon";
+      b.style.left = (Math.random()*90) + "%";
+      b.style.background = colors[Math.floor(Math.random()*colors.length)];
+      const dur = 3 + Math.random()*2;
+      b.style.animationDuration = dur + "s";
+      area.appendChild(b);
+      window.setTimeout(() => { b.remove(); }, Math.ceil(dur*1000) + 250);
+    }
+  }
+
+  function clearMultiples(){
+    while (multTable.firstChild) multTable.removeChild(multTable.firstChild);
+  }
+
+  function makeSpan(num, isCommon){
+    const s = document.createElement('span');
+    s.className = 'multNum' + (isCommon ? ' common' : '');
+    s.textContent = String(num);
+    return s;
+  }
+
+  function buildMultiplesUI(q){
+    clearMultiples();
+
+    const a = q.a, b = q.b;
+    const L = q.L;
+    const maxVal = Math.min(Math.max(L*3, L), DISPLAY_CAP);
+
+    const multA = [];
+    for (let x=a; x<=maxVal; x+=a) multA.push(x);
+    const multB = [];
+    for (let x=b; x<=maxVal; x+=b) multB.push(x);
+
+    const setB = new Set(multB);
+    const common = new Set(multA.filter(x => setB.has(x)));
+
+    function addRow(label, arr){
+      const row = document.createElement('div');
+      row.className = 'multRow';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'multLbl';
+      lbl.textContent = label;
+
+      const list = document.createElement('div');
+      list.className = 'multList';
+
+      for (const v of arr){
+        list.appendChild(makeSpan(v, common.has(v)));
+      }
+
+      row.appendChild(lbl);
+      row.appendChild(list);
+      multTable.appendChild(row);
+    }
+
+    addRow(`Multiples of ${a}:`, multA);
+    addRow(`Multiples of ${b}:`, multB);
+  }
+
+  function showInfo(kind, q){
+    infoBox.style.display = 'block';
+    clearMultiples();
+    buildMultiplesUI(q);
+
+    if (kind === "hint"){
+      infoTitle.textContent = "Hint";
+      infoText.textContent = "These are some multiples. The underlined ones are common to both. Which underlined number is the smallest?";
+    } else {
+      infoTitle.textContent = "Solution";
+      infoText.textContent = `Answer: ${q.L}. It is the first number that appears in both lists (the first underlined number).`;
+    }
+  }
+
+  function hideInfo(){
+    infoBox.style.display = 'none';
+    clearMultiples();
+  }
+
+  // Questions
+  function genQuestion(){
+    for (let tries=0; tries<200; tries++){
+      let a = randChoice(A_RANGE);
+      let b = randChoice(A_RANGE);
+      if (a === b) continue;
+      const L = lcm(a,b);
+      if (!Number.isFinite(L) || !Number.isInteger(L)) continue;
+      return {a,b,L};
+    }
+    return {a:2,b:7,L:lcm(2,7)};
+  }
+
+  function renderCurrent(){
+    const q = state.questions[state.qIndex];
+    state.current = q;
+    state.attempts = 0;
+
+    aOut.textContent = String(q.a);
+    bOut.textContent = String(q.b);
+
+    clueEl.textContent = `Question ${state.qIndex+1}/${Q_COUNT}: What is the smallest common multiple of ${q.a} and ${q.b}?`;
+
+    ansIn.value = "";
+    unlockInput();
+    hideInfo();
+    setFeedback("");
+
+    checkBtn.disabled = false;
+    checkBtn.style.display = 'inline-block';
+    nextBtn.style.display = 'none';
+    againBtn.style.display = 'none';
+
+    ansIn.focus();
+  }
+
+  function startSet(){
+    stopTimer();
+    state.elapsedMs = 0;
+    timeOut.textContent = fmtTime(0);
+
+    state.questions = Array.from({length:Q_COUNT}, () => genQuestion());
+    state.qIndex = 0;
+    state.attempts = 0;
+    state.finished = false;
+
+    state.lights = Array(Q_COUNT).fill('blank');
+    refreshLights();
+
+    hideInfo();
+    setFeedback("");
+
+    state.running = true;
+    startTimer();
+
+    renderCurrent();
+  }
+
+  function finishSet(){
+    state.finished = true;
+    state.running = false;
+
+    const {g,y,r} = counts();
+    const rec = {greens:g, yellows:y, timeMs: Math.round(state.elapsedMs)};
+    const best = loadBest();
+
+    if (isBetter(rec, best)){
+      saveBest(rec);
+      bestOut.textContent = bestLine(rec);
+      setFeedback(`Set complete: ${g} green, ${y} yellow, ${r} red. New best!`, "good");
+    } else {
+      bestOut.textContent = bestLine(best);
+      setFeedback(`Set complete: ${g} green, ${y} yellow, ${r} red.`, "");
+    }
+
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+    againBtn.style.display = 'inline-block';
+
+    stopTimer();
+  }
+
+  function nextQ(){
+    if (state.qIndex >= Q_COUNT-1){
+      finishSet();
+      return;
+    }
+    state.qIndex += 1;
+    renderCurrent();
+  }
+
+  function onCheck(){
+    const q = state.current;
+    const val = readAnswer();
+
+    if (val === null){
+      setFeedback("Type a number first.", "warn");
+      return;
+    }
+
+    if (val === q.L){
+      if (state.attempts === 0){
+        mark('green');
+        setFeedback("Correct!", "good");
+      } else {
+        setFeedback("Correct (second try).", "good");
+      }
+
+      triggerCelebration();
+
+      lockInput();
+      checkBtn.disabled = true;
+      hideInfo();
+
+      nextBtn.style.display = 'inline-block';
+      nextBtn.textContent = (state.qIndex === Q_COUNT-1) ? "Finish" : "Next";
+      return;
+    }
+
+    // wrong
+    state.attempts += 1;
+
+    if (state.attempts === 1){
+      mark('yellow');
+      setFeedback("Not yet. Try again.", "warn");
+      showInfo("hint", q);
+      return;
+    }
+
+    // second wrong -> red
+    mark('red');
+    setFeedback(`Not quite. Answer: ${q.L}.`, "bad");
+
+    lockInput();
+    checkBtn.disabled = true;
+
+    showInfo("solution", q);
+
+    nextBtn.style.display = 'inline-block';
+    nextBtn.textContent = (state.qIndex === Q_COUNT-1) ? "Finish" : "Next";
+  }
+
+  const state = {
+    questions: [],
+    qIndex: 0,
+    attempts: 0,
+    current: null,
+    lights: Array(Q_COUNT).fill('blank'),
+    finished: false,
+    timerId: null,
+    t0: 0,
+    elapsedMs: 0,
+    running: false
+  };
+
+  bestOut.textContent = bestLine(loadBest());
+  refreshLights();
+
+  checkBtn.addEventListener('click', () => onCheck());
+  nextBtn.addEventListener('click', () => nextQ());
+  againBtn.addEventListener('click', () => startSet());
+
+  ansIn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') onCheck();
+  });
+
+  startSet();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fractions Lab</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.65);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --bad:#dc2626;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+  }
+  #app{ width:min(980px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:0.01em;
+  }
+  #targetBox{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 14px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.04);
+  }
+  #targetBox .lbl{
+    font-size:12px;
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  #targetFrac{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:24px;
+    color:var(--accent);
+  }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    box-shadow:0 1px 8px rgba(0,0,0,0.04);
+  }
+
+  #status{
+    min-height:22px;
+    margin:2px 0 10px 0;
+    font-weight:900;
+    color:var(--muted);
+  }
+  #status.good{ color:var(--good); }
+  #status.bad{ color:var(--bad); }
+
+  svg{
+    width:100%;
+    height:auto;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:white;
+    touch-action:none;
+    user-select:none;
+  }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-top:10px;
+  }
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 12px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+    user-select:none;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button.good{
+    background:var(--good);
+    color:white;
+    border-color:rgba(22,163,74,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #chainSection{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed rgba(0,0,0,0.18);
+    display:none;
+  }
+  #chainHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  #chainTitle{
+    font-weight:900;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+  }
+  #stepExplain{
+    margin: 8px 0 10px 0;
+    min-height: 20px;
+    font-weight:900;
+    color:rgba(17,24,39,0.80);
+  }
+  #stepExplain.pop{
+    animation: explainPop 220ms ease-out both;
+  }
+  @keyframes explainPop{
+    from{ transform: translateY(2px); opacity:0.0; }
+    to{ transform: translateY(0px); opacity:1.0; }
+  }
+
+  #chainRow{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .eq{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:26px;
+    color:rgba(37,99,235,0.75);
+    align-self:center;
+    padding:0 2px;
+    flex:0 0 auto;
+  }
+  .chainPanel{
+    flex:0 0 auto;
+    width:250px;
+    background:rgba(0,0,0,0.02);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px;
+    box-sizing:border-box;
+  }
+  .chainPanel.pop{
+    animation: panelPop 220ms ease-out both;
+  }
+  @keyframes panelPop{
+    from{ transform:scale(0.98); opacity:0.0; }
+    to{ transform:scale(1.0); opacity:1.0; }
+  }
+  .fracLabel{
+    margin-top:6px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:16px;
+    color:rgba(17,24,39,0.85);
+    text-align:center;
+  }
+
+  /* pizza SVG styles */
+  .slice{ cursor:pointer; }
+  .slice.disabled{ cursor:default; }
+  .cutline{ stroke:rgba(0,0,0,0.22); stroke-width:2; stroke-linecap:round; }
+  .cutline.new{ opacity:0; animation: cutFade 650ms ease forwards; }
+  @keyframes cutFade{ from{opacity:0;} to{opacity:1;} }
+  .outline{ stroke:rgba(0,0,0,0.30); stroke-width:3; fill:none; }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+<div id="app">
+  <div id="top">
+    <div id="title">Fractions Lab</div>
+    <div id="targetBox">
+      <div class="lbl">Target</div>
+      <div id="targetFrac">—</div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="status">Click slices to match the target fraction, then press Check.</div>
+    <svg id="buildSvg" viewBox="0 0 900 300" aria-label="pizza builder"></svg>
+
+    <div id="actions">
+      <button id="resetBtn">Reset</button>
+      <button id="checkBtn" class="primary">Check</button>
+      <button id="nextEqBtn" class="good" style="display:none;">Next equality</button>
+      <button id="newBtn" style="display:none;">New fraction</button>
+    </div>
+
+    <div id="chainSection">
+      <div id="chainHeader">
+        <div id="chainTitle">Same amount, different forms</div>
+      </div>
+      <div id="stepExplain"></div>
+      <div id="chainRow" aria-label="equality chain"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [2, 3, 4, 6];
+  const MAX_PIZZAS = 3;
+  const MAX_SELECT = 10;
+  const MAX_DEN_FOR_EXPAND = 8;
+
+  const buildSvg = document.getElementById('buildSvg');
+  const targetFrac = document.getElementById('targetFrac');
+  const statusEl = document.getElementById('status');
+
+  const resetBtn = document.getElementById('resetBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const nextEqBtn = document.getElementById('nextEqBtn');
+  const newBtn = document.getElementById('newBtn');
+
+  const chainSection = document.getElementById('chainSection');
+  const chainRow = document.getElementById('chainRow');
+  const stepExplain = document.getElementById('stepExplain');
+
+  function gcd(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while (b){ const t = a % b; a = b; b = t; }
+    return a || 1;
+  }
+  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+  function setStatus(text, kind=""){
+    statusEl.textContent = text;
+    statusEl.classList.remove('good','bad');
+    if (kind) statusEl.classList.add(kind);
+  }
+
+  function svgEl(tag, attrs={}){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+  function clearSvg(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+  function slicePath(cx, cy, r, a0, a1){
+    const x0 = cx + r*Math.cos(a0);
+    const y0 = cy + r*Math.sin(a0);
+    const x1 = cx + r*Math.cos(a1);
+    const y1 = cy + r*Math.sin(a1);
+    const large = (a1 - a0) > Math.PI ? 1 : 0;
+    return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+  }
+
+  function drawPizza(svg, cx, cy, r, den, filledCount, opts={}){
+    const clickable = opts.clickable ?? false;
+    const disabled = opts.disabled ?? false;
+    const pizzaIndex = opts.pizzaIndex ?? 0;
+    const selectedSet = opts.selectedSet ?? null; // builder selection
+    const pieceOffset = pizzaIndex * den;
+    const animateNewCutsFromDen = opts.animateNewCutsFromDen ?? null; // for expand panels
+
+    svg.appendChild(svgEl('circle', {
+      cx, cy, r,
+      fill: 'rgba(0,0,0,0.02)',
+      stroke: 'rgba(0,0,0,0.18)',
+      'stroke-width': 2
+    }));
+
+    if (den <= 1){
+      const filled = (filledCount >= 1);
+      svg.appendChild(svgEl('circle', {
+        cx, cy, r: r-1,
+        fill: filled ? 'rgba(37,99,235,0.20)' : 'rgba(0,0,0,0.00)',
+        stroke: 'none'
+      }));
+      svg.appendChild(svgEl('circle', { cx, cy, r: r-1, class:'outline' }));
+      return;
+    }
+
+    const aStart = -Math.PI/2;
+    for (let i=0; i<den; i++){
+      const a0 = aStart + i*(2*Math.PI/den);
+      const a1 = aStart + (i+1)*(2*Math.PI/den);
+      const d = slicePath(cx, cy, r-1, a0, a1);
+
+      let isFilled = false;
+      if (selectedSet){
+        const pieceId = pieceOffset + i;
+        isFilled = selectedSet.has(pieceId);
+      } else {
+        isFilled = (i < filledCount);
+      }
+
+      const p = svgEl('path', {
+        d,
+        fill: isFilled ? 'rgba(37,99,235,0.22)' : 'rgba(0,0,0,0.02)',
+        stroke: 'none',
+        class: (clickable && !disabled) ? 'slice' : 'slice disabled'
+      });
+
+      if (clickable && !disabled){
+        p.setAttribute('data-piece', String(pieceOffset + i));
+      }
+      svg.appendChild(p);
+    }
+
+    // cut lines
+    for (let i=0; i<den; i++){
+      const a = aStart + i*(2*Math.PI/den);
+      const x = cx + (r-2)*Math.cos(a);
+      const y = cy + (r-2)*Math.sin(a);
+
+      let cls = 'cutline';
+      if (animateNewCutsFromDen && den === 2*animateNewCutsFromDen){
+        // old cuts are even indices, new cuts are odd indices
+        if (i % 2 === 1) cls += ' new';
+      }
+
+      svg.appendChild(svgEl('line', {
+        x1: cx, y1: cy, x2: x, y2: y,
+        class: cls
+      }));
+    }
+
+    svg.appendChild(svgEl('circle', { cx, cy, r: r-1, class:'outline' }));
+  }
+
+  function drawBuilder(){
+    clearSvg(buildSvg);
+
+    buildSvg.appendChild(svgEl('rect', {
+      x: 10, y: 10, width: 880, height: 280,
+      rx: 14, ry: 14,
+      fill: 'rgba(0,0,0,0.00)',
+      stroke: 'rgba(0,0,0,0.10)', 'stroke-width': 2
+    }));
+
+    const den = state.den;
+    const pizzas = state.pizzas;
+    const r = 80;
+    const gap = 90;
+    const totalW = pizzas*(2*r) + (pizzas-1)*gap;
+    const x0 = 450 - totalW/2 + r;
+    const y = 150;
+
+    for (let p=0; p<pizzas; p++){
+      const cx = x0 + p*(2*r + gap);
+      drawPizza(buildSvg, cx, y, r, den, 0, {
+        clickable: true,
+        disabled: state.solved,
+        pizzaIndex: p,
+        selectedSet: state.selected
+      });
+    }
+
+    const hint = svgEl('text', {
+      x: 450, y: 286,
+      'text-anchor':'middle',
+      'font-family': 'ui-sans-serif, system-ui',
+      'font-weight': 900,
+      'font-size': 12,
+      fill: 'rgba(0,0,0,0.45)'
+    });
+    hint.textContent = state.solved
+      ? "Solved. Use “Next equality”."
+      : "Click slices, then press Check.";
+    buildSvg.appendChild(hint);
+  }
+
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function weightedPick(values, weights){
+    const s = weights.reduce((a,x)=>a+x,0);
+    let r = Math.random()*s;
+    for (let i=0; i<values.length; i++){
+      r -= weights[i];
+      if (r <= 0) return values[i];
+    }
+    return values[values.length-1];
+  }
+
+  function makeTarget(){
+    const den = randChoice(DENOMS);
+    const maxNum = Math.min(MAX_SELECT, MAX_PIZZAS*den);
+
+    // choose whole part q with weights, but constrained
+    const qMax = Math.floor(maxNum / den);
+    const qCandidates = [];
+    const qWeights = [];
+    const base = [
+      {q:0,w:0.50},
+      {q:1,w:0.34},
+      {q:2,w:0.14},
+      {q:3,w:0.02}
+    ];
+    for (const it of base){
+      if (it.q <= qMax){
+        qCandidates.push(it.q);
+        qWeights.push(it.w);
+      }
+    }
+    const q = weightedPick(qCandidates, qWeights);
+
+    // choose remainder r
+    let r;
+    if (q === 0){
+      // proper fraction: nonzero remainder
+      r = 1 + Math.floor(Math.random() * Math.min(den-1, maxNum));
+    } else {
+      // sometimes allow exact integer
+      if (Math.random() < 0.18){
+        r = 0;
+      } else {
+        r = 1 + Math.floor(Math.random()*(den-1));
+      }
+    }
+
+    let num = q*den + r;
+    if (num < 1) num = 1;
+    if (num > maxNum) num = maxNum;
+
+    const pizzas = Math.max(1, Math.ceil(num/den));
+    return {num, den, pizzas};
+  }
+
+  function fracStr(n,d){ return `${n}/${d}`; }
+
+  function resetAllUI(){
+    chainSection.style.display = 'none';
+    chainRow.innerHTML = '';
+    stepExplain.textContent = '';
+    nextEqBtn.style.display = 'none';
+    newBtn.style.display = 'none';
+
+    resetBtn.style.display = 'inline-block';
+    checkBtn.style.display = 'inline-block';
+  }
+
+  function resetSelection(){
+    state.selected = new Set();
+    state.solved = false;
+    state.steps = [];
+    state.stepIndex = 0;
+
+    resetAllUI();
+    setStatus("Click slices to match the target fraction, then press Check.");
+    drawBuilder();
+  }
+
+  function newProblem(){
+    const t = makeTarget();
+    state.num = t.num;
+    state.den = t.den;
+    state.pizzas = t.pizzas;
+
+    targetFrac.textContent = fracStr(state.num, state.den);
+    resetSelection();
+  }
+
+  // --------- equality chain (purposeful, no random steps) ----------
+  function buildSteps(n, d){
+    const steps = [];
+
+    // Proper fraction
+    if (n < d){
+      const g = gcd(n, d);
+      if (g > 1){
+        const nn = n/g, dd = d/g;
+        steps.push({
+          kind: 'simplify',
+          rep: {kind:'fraction', num: nn, den: dd},
+          label: fracStr(nn, dd),
+          explain: `We can group the pieces into bigger equal pieces, so ${n}/${d} becomes ${nn}/${dd}.`
+        });
+        return steps;
+      }
+
+      // If it's already simplest, do nothing (no "split into more pieces" step)
+      return steps;
+    }
+
+    // Improper fraction
+    const q0 = Math.floor(n/d);
+    const r0 = n % d;
+
+    if (r0 === 0){
+      steps.push({
+        kind: 'integer',
+        rep: {kind:'integer', whole: q0},
+        label: String(q0),
+        explain: `All the pieces make exactly ${q0} whole pizza${q0===1?'':'s'}.`
+      });
+      return steps;
+    }
+
+    // CHANGE: no "split into more pieces" step here. Go directly to whole pizzas + remainder.
+    let curN = n;
+    let curD = d;
+
+    const q = Math.floor(curN/curD);
+    const r = curN % curD;
+
+    steps.push({
+      kind: 'decompose',
+      rep: {kind:'decompose', den: curD, wholeCount: q, remCount: r},
+      label: `${q*curD}/${curD} + ${r}/${curD}`,
+      explain: `We group pieces to make whole pizzas first. What’s left is the extra part.`
+    });
+
+    // Reduce remainder (if possible), and present as mixed number q + rr/dd with whole pizzas undivided
+    const g = gcd(r, curD);
+    const rr = r / g;
+    const dd = curD / g;
+
+    let explain;
+    if (g > 1){
+      explain = `A full pizza is 1. And we can group the leftover pieces into bigger equal pieces, so the numbers get smaller.`;
+    } else {
+      explain = `A full pizza is 1. So this is ${q} whole pizza${q===1?'':'s'} plus the leftover fraction.`;
+    }
+
+    steps.push({
+      kind: 'mixed',
+      rep: {kind:'mixed', whole: q, remNum: rr, remDen: dd},
+      label: `${q} + ${rr}/${dd}`,
+      explain
+    });
+
+    return steps;
+  }
+
+  function drawChainRep(svg, rep){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    svg.appendChild(svgEl('rect', {
+      x: 6, y: 6, width: 228, height: 148,
+      rx: 12, ry: 12,
+      fill: 'rgba(0,0,0,0.00)',
+      stroke: 'rgba(0,0,0,0.08)', 'stroke-width': 2
+    }));
+
+    const r = 32;
+    const gap = 14;
+
+    function drawRow(specs){
+      const count = specs.length;
+      const totalW = count*(2*r) + (count-1)*gap;
+      const x0 = 120 - totalW/2 + r;
+      const y = 78;
+
+      for (let i=0; i<count; i++){
+        const cx = x0 + i*(2*r + gap);
+        const s = specs[i];
+        drawPizza(svg, cx, y, r, s.den, s.fill, {
+          clickable:false, disabled:true,
+          animateNewCutsFromDen: s.prevDen || null
+        });
+      }
+      return {x0, y};
+    }
+
+    function plusBetween(xA, xB, y){
+      const plus = svgEl('text', {
+        x: (xA + xB)/2, y: y+10,
+        'text-anchor':'middle',
+        'font-family': 'ui-monospace, Menlo, monospace',
+        'font-weight': 900,
+        'font-size': 22,
+        fill: 'rgba(37,99,235,0.75)'
+      });
+      plus.textContent = "+";
+      svg.appendChild(plus);
+    }
+
+    if (rep.kind === 'fraction'){
+      const num = rep.num, den = rep.den;
+      const pizzas = Math.max(1, Math.ceil(num/den));
+      const specs = [];
+      for (let p=0; p<pizzas; p++){
+        const fill = Math.max(0, Math.min(den, num - p*den));
+        specs.push({den, fill, prevDen: rep.prevDen || null});
+      }
+      drawRow(specs);
+      return;
+    }
+
+    if (rep.kind === 'decompose'){
+      const den = rep.den;
+      const q = rep.wholeCount;
+      const rcount = rep.remCount;
+
+      const specs = [];
+      for (let i=0; i<q; i++) specs.push({den, fill: den});
+      if (rcount > 0) specs.push({den, fill: rcount});
+
+      const {x0, y} = drawRow(specs);
+
+      if (q > 0 && rcount > 0){
+        const cxLastFull = x0 + (q-1)*(2*r + gap);
+        const cxRem = x0 + q*(2*r + gap);
+        plusBetween(cxLastFull, cxRem, y);
+      }
+      return;
+    }
+
+    if (rep.kind === 'mixed'){
+      const q = rep.whole;
+      const rn = rep.remNum;
+      const rd = rep.remDen;
+
+      const specs = [];
+      for (let i=0; i<q; i++) specs.push({den: 1, fill: 1}); // whole pizzas have no subdivision
+      if (rn > 0) specs.push({den: rd, fill: rn});
+
+      const {x0, y} = drawRow(specs);
+
+      if (q > 0 && rn > 0){
+        const cxLastWhole = x0 + (q-1)*(2*r + gap);
+        const cxRem = x0 + q*(2*r + gap);
+        plusBetween(cxLastWhole, cxRem, y);
+      }
+      return;
+    }
+
+    if (rep.kind === 'integer'){
+      const q = rep.whole;
+      const specs = [];
+      for (let i=0; i<q; i++) specs.push({den: 1, fill: 1});
+      drawRow(specs);
+      return;
+    }
+  }
+
+  function addChainPanel(label, rep, isFirst){
+    if (!isFirst){
+      const eq = document.createElement('div');
+      eq.className = 'eq';
+      eq.textContent = '=';
+      chainRow.appendChild(eq);
+    }
+
+    const panel = document.createElement('div');
+    panel.className = 'chainPanel pop';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 240 160');
+    panel.appendChild(svg);
+
+    const lab = document.createElement('div');
+    lab.className = 'fracLabel';
+    lab.textContent = label;
+    panel.appendChild(lab);
+
+    chainRow.appendChild(panel);
+    drawChainRep(svg, rep);
+    chainRow.scrollLeft = chainRow.scrollWidth;
+  }
+
+  function showExplain(text){
+    stepExplain.classList.remove('pop');
+    stepExplain.textContent = text;
+    void stepExplain.offsetWidth; // restart animation
+    stepExplain.classList.add('pop');
+  }
+
+  function startChain(){
+    chainRow.innerHTML = '';
+    chainSection.style.display = 'block';
+
+    addChainPanel(fracStr(state.num, state.den), {kind:'fraction', num: state.num, den: state.den}, true);
+
+    state.steps = buildSteps(state.num, state.den);
+    state.stepIndex = 0;
+
+    if (state.steps.length === 0){
+      showExplain("This one is already as simple as we want it. Try a new fraction.");
+      nextEqBtn.style.display = 'none';
+      newBtn.style.display = 'inline-block';
+      return;
+    }
+
+    showExplain("Now click “Next equality” to see the same amount written in a new way.");
+    nextEqBtn.style.display = 'inline-block';
+    nextEqBtn.disabled = false;
+
+    newBtn.style.display = 'none';
+  }
+
+  function nextEquality(){
+    if (state.stepIndex >= state.steps.length) return;
+
+    const step = state.steps[state.stepIndex];
+    state.stepIndex += 1;
+
+    addChainPanel(step.label, step.rep, false);
+    showExplain(step.explain);
+
+    if (state.stepIndex >= state.steps.length){
+      nextEqBtn.disabled = true;
+      nextEqBtn.style.display = 'none';
+      newBtn.style.display = 'inline-block';
+    }
+  }
+
+  // --------- interactions ----------
+  buildSvg.addEventListener('pointerdown', (e) => {
+    if (state.solved) return;
+    const path = e.target.closest('path[data-piece]');
+    if (!path) return;
+
+    const pieceId = parseInt(path.getAttribute('data-piece'), 10);
+    if (!Number.isFinite(pieceId)) return;
+
+    if (state.selected.has(pieceId)){
+      state.selected.delete(pieceId);
+    } else {
+      if (state.selected.size >= state.num){
+        setStatus("That’s enough slices. Press Check.", "");
+        return;
+      }
+      state.selected.add(pieceId);
+    }
+
+    if (state.selected.size === state.num){
+      setStatus("Good. Press Check.", "");
+    } else {
+      setStatus("Click slices to match the target fraction, then press Check.", "");
+    }
+    drawBuilder();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (state.solved) return;
+    state.selected = new Set();
+    setStatus("Reset. Click slices to match the target fraction, then press Check.", "");
+    drawBuilder();
+  });
+
+  checkBtn.addEventListener('click', () => {
+    if (state.solved) return;
+
+    const k = state.selected.size;
+    if (k === state.num){
+      state.solved = true;
+
+      resetBtn.style.display = 'none';
+      checkBtn.style.display = 'none';
+
+      setStatus("Correct.", "good");
+      drawBuilder();
+      startChain();
+    } else {
+      setStatus("Not yet. Try again.", "bad");
+    }
+  });
+
+  nextEqBtn.addEventListener('click', () => nextEquality());
+  newBtn.addEventListener('click', () => newProblem());
+
+  // --------- init ----------
+  const state = {
+    num: 3,
+    den: 2,
+    pizzas: 2,
+    selected: new Set(),
+    solved: false,
+    steps: [],
+    stepIndex: 0
+  };
+
+  newProblem();
+})();
+</script>
+</body>
+</html>

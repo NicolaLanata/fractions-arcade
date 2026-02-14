@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Units + Remainder</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.60);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --warn:#f59e0b;
+    --bad:#dc2626;
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+  #celebration-area{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:5;
+    overflow:hidden;
+  }
+  #app{ width:min(980px, 100%); }
+
+  /* top bar */
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+  #topRight{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .pill{
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    font-weight:900;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:rgba(17,24,39,0.70);
+  }
+  .pill .mono{ font-family:var(--mono); letter-spacing:0.02em; }
+  .pill .blue{ color:var(--accent); }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  /* card */
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  /* lights */
+  #lightsRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .light{
+    width:18px; height:18px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,0.16);
+    background:rgba(0,0,0,0.08);
+  }
+  .light.green{ background:rgba(22,163,74,0.75); border-color:rgba(22,163,74,0.55); }
+  .light.yellow{ background:rgba(245,158,11,0.85); border-color:rgba(245,158,11,0.65); }
+  .light.red{ background:rgba(220,38,38,0.78); border-color:rgba(220,38,38,0.60); }
+
+  #questionText{
+    font-weight:900;
+    font-size:22px;
+    color:rgba(17,24,39,0.85);
+    margin-bottom:14px;
+  }
+
+  /* stepper */
+  #stepper{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin: 4px 0 14px 0;
+  }
+  .stepItem{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,0.10);
+    background:rgba(0,0,0,0.02);
+    color:rgba(17,24,39,0.65);
+    font-weight:900;
+  }
+  .stepItem .dot{
+    width:20px; height:20px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.10);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+  }
+  .stepItem.active{
+    border-color: rgba(37,99,235,0.28);
+    background: rgba(37,99,235,0.06);
+    color: rgba(37,99,235,0.95);
+  }
+  .stepItem.active .dot{
+    background: rgba(37,99,235,0.85);
+    color:#fff;
+  }
+  .stepItem.done{
+    border-color: rgba(22,163,74,0.25);
+    background: rgba(22,163,74,0.06);
+    color: rgba(22,163,74,0.95);
+  }
+  .stepItem.done .dot{
+    background: rgba(22,163,74,0.85);
+    color:#fff;
+  }
+
+  /* equation */
+  #equationArea{
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    background:rgba(0,0,0,0.02);
+  }
+  .eqLine{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    margin: 8px 0;
+  }
+  .op{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:34px;
+    color:rgba(37,99,235,0.75);
+  }
+
+  .frac{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-width:90px;
+  }
+  .frac .num, .frac .den{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:46px;
+    line-height:1.0;
+    min-height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .frac .bar{
+    width:82px;
+    height:4px;
+    background:rgba(0,0,0,0.35);
+    border-radius:3px;
+    margin:9px 0;
+  }
+  .bigInt{
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:46px;
+    line-height:1.0;
+    min-height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .ans{
+    width:140px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:38px;
+    text-align:center;
+    border:2px solid rgba(37,99,235,0.35);
+    border-radius:12px;
+    padding:6px 8px;
+    outline:none;
+    background:#fff;
+  }
+  .ans.small{ width:130px; }
+  .ans:focus{
+    border-color: rgba(37,99,235,0.75);
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  }
+
+  .note{
+    text-align:center;
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    margin-top:8px;
+  }
+
+  /* hint/solution box */
+  #hintBox{
+    margin-top:14px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:#fff;
+    display:none;
+  }
+  #hintTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  #hintText{
+    font-weight:900;
+    color:rgba(17,24,39,0.85);
+    line-height:1.25;
+  }
+
+  #status{
+    text-align:center;
+    font-weight:900;
+    min-height:24px;
+    margin-top:12px;
+    color:var(--muted);
+  }
+  #status.good{ color:var(--good); }
+  #status.warn{ color:rgba(161,98,7,0.95); }
+  #status.bad{ color:var(--bad); }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  /* end screen */
+  #endScreen{
+    display:none;
+    text-align:center;
+    padding:10px 6px 2px 6px;
+  }
+  #endTitle{
+    font-weight:900;
+    font-size:22px;
+    margin-bottom:6px;
+  }
+  #endSummary{
+    font-weight:900;
+    color:rgba(17,24,39,0.70);
+    margin-bottom:14px;
+  }
+
+  /* balloons */
+  .balloon{
+    position:absolute;
+    bottom:-100px;
+    width:40px;
+    height:50px;
+    border-radius:50%;
+    opacity:0.92;
+    animation: floatUp 3.8s ease-in forwards;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.18);
+  }
+  @keyframes floatUp{
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(18deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+
+<div id="celebration-area"></div>
+
+<div id="app">
+  <div id="top">
+    <div id="title">Units + Remainder</div>
+    <div id="topRight">
+      <div class="pill" id="bestPill">BEST <span class="mono" id="bestTxt">—</span></div>
+      <div class="pill">TIME <span class="mono blue" id="timeTxt">0:00.0</span></div>
+      <button id="restartBtn" type="button">Restart</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="lightsRow" aria-label="progress lights"></div>
+
+    <div id="questionText">—</div>
+
+    <div id="stepper" aria-label="steps">
+      <div class="stepItem active" id="st1"><div class="dot">1</div>Split</div>
+      <div class="stepItem" id="st2"><div class="dot">2</div>Simplify</div>
+    </div>
+
+    <div id="equationArea">
+      <!-- stage 1 -->
+      <div id="stage1">
+        <div class="eqLine">
+          <div class="frac" aria-label="original fraction">
+            <div class="num" id="n1">—</div>
+            <div class="bar"></div>
+            <div class="den" id="d1">—</div>
+          </div>
+
+          <span class="op">=</span>
+
+          <input id="qIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="units input">
+
+          <span class="op">+</span>
+
+          <div class="frac" aria-label="leftover fraction">
+            <div class="num"><input id="rIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="leftover numerator input"></div>
+            <div class="bar"></div>
+            <div class="den" id="d1b">—</div>
+          </div>
+        </div>
+        <div class="note" id="ruleNote">Rule: leftover must be smaller than the denominator.</div>
+      </div>
+
+      <!-- stage 2 -->
+      <div id="stage2" style="display:none;">
+        <div id="stage2Auto" style="display:none;">
+          <div class="eqLine" id="autoLine"></div>
+          <div class="note" id="autoNote"></div>
+        </div>
+
+        <div id="stage2Need" style="display:none;">
+          <div class="eqLine">
+            <span class="bigInt" id="q2a">—</span>
+            <span class="op">+</span>
+            <div class="frac" aria-label="unsimplified leftover">
+              <div class="num" id="r2a">—</div>
+              <div class="bar"></div>
+              <div class="den" id="d2a">—</div>
+            </div>
+            <span class="op">=</span>
+            <span class="bigInt" id="q2b">—</span>
+            <span class="op">+</span>
+            <div class="frac" aria-label="simplified leftover">
+              <div class="num"><input id="simpNumIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="simplified numerator"></div>
+              <div class="bar"></div>
+              <div class="den"><input id="simpDenIn" class="ans small" type="text" inputmode="numeric" pattern="[0-9]*" aria-label="simplified denominator"></div>
+            </div>
+          </div>
+          <div class="note">Divide the top and bottom by the same number.</div>
+        </div>
+      </div>
+
+      <div id="hintBox">
+        <div id="hintTitle">Hint</div>
+        <div id="hintText"></div>
+      </div>
+
+      <div id="status"></div>
+
+      <div id="actions">
+        <button id="checkBtn" class="primary" type="button">Check</button>
+        <button id="nextBtn" type="button" style="display:none;">Next</button>
+      </div>
+
+      <div id="endScreen">
+        <div id="endTitle">Done</div>
+        <div id="endSummary">—</div>
+        <button id="playAgainBtn" class="primary" type="button">Play again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [2, 3, 4, 5, 6, 8, 10, 12];
+  const Q_WEIGHTS = [0, 1, 1, 1, 2, 2, 3];
+  const NQ = 5;
+  const BEST_KEY = "fractions_units_remainder_best_v1";
+
+  const lightsRow = document.getElementById('lightsRow');
+  const questionText = document.getElementById('questionText');
+
+  const st1 = document.getElementById('st1');
+  const st2 = document.getElementById('st2');
+
+  const n1 = document.getElementById('n1');
+  const d1 = document.getElementById('d1');
+  const d1b = document.getElementById('d1b');
+
+  const qIn = document.getElementById('qIn');
+  const rIn = document.getElementById('rIn');
+
+  const stage1 = document.getElementById('stage1');
+  const stage2 = document.getElementById('stage2');
+  const stage2Auto = document.getElementById('stage2Auto');
+  const autoLine = document.getElementById('autoLine');
+  const autoNote = document.getElementById('autoNote');
+  const stage2Need = document.getElementById('stage2Need');
+
+  const q2a = document.getElementById('q2a');
+  const q2b = document.getElementById('q2b');
+  const r2a = document.getElementById('r2a');
+  const d2a = document.getElementById('d2a');
+
+  const simpNumIn = document.getElementById('simpNumIn');
+  const simpDenIn = document.getElementById('simpDenIn');
+
+  const hintBox = document.getElementById('hintBox');
+  const hintTitle = document.getElementById('hintTitle');
+  const hintText = document.getElementById('hintText');
+
+  const status = document.getElementById('status');
+
+  const checkBtn = document.getElementById('checkBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const timeTxt = document.getElementById('timeTxt');
+  const bestTxt = document.getElementById('bestTxt');
+
+  const restartBtn = document.getElementById('restartBtn');
+
+  const endScreen = document.getElementById('endScreen');
+  const endSummary = document.getElementById('endSummary');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+
+  const celebrationArea = document.getElementById('celebration-area');
+
+  // ---------- helpers ----------
+  function gcd(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while (b){ const t = a % b; a = b; b = t; }
+    return a || 1;
+  }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+  function formatTime(ms){
+    const t = ms / 1000;
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    const tenths = Math.floor((t - Math.floor(t)) * 10 + 1e-9);
+    return `${m}:${String(s).padStart(2,'0')}.${tenths}`;
+  }
+
+  function parseIntOrNull(s){
+    const t = (s || "").trim();
+    if (!t) return null;
+    const v = parseInt(t, 10);
+    return Number.isFinite(v) ? v : null;
+  }
+
+  function cleanDigits(el){
+    el.value = el.value.replace(/[^\d]/g,'');
+  }
+  [qIn, rIn, simpNumIn, simpDenIn].forEach(el => {
+    el.addEventListener('input', () => cleanDigits(el));
+  });
+
+  function setStatus(text, cls=""){
+    status.textContent = text;
+    status.classList.remove('good','warn','bad');
+    if (cls) status.classList.add(cls);
+  }
+
+  function hideHint(){
+    hintBox.style.display = 'none';
+    hintText.textContent = "";
+  }
+  function showHint(title, text){
+    hintTitle.textContent = title;
+    hintText.textContent = text;
+    hintBox.style.display = 'block';
+  }
+
+  function setStepUI(stage){
+    st1.classList.remove('active','done');
+    st2.classList.remove('active','done');
+
+    if (stage === 1){
+      st1.classList.add('active');
+    } else {
+      st1.classList.add('done');
+      st2.classList.add('active');
+    }
+  }
+
+  function clearInputs(){
+    qIn.value = "";
+    rIn.value = "";
+    simpNumIn.value = "";
+    simpDenIn.value = "";
+  }
+
+  function triggerCelebration(){
+    const colors = ['#ef4444', '#2563eb', '#16a34a', '#f59e0b', '#a855f7'];
+    for (let i=0; i<15; i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.style.left = (Math.random() * 94) + '%';
+      b.style.background = colors[Math.floor(Math.random()*colors.length)];
+      b.style.animationDuration = (3 + Math.random()*1.6) + 's';
+      celebrationArea.appendChild(b);
+      setTimeout(() => { try { b.remove(); } catch(_){} }, 5200);
+    }
+  }
+
+  // ---------- session ----------
+  const session = {
+    questions: [],
+    idx: 0,
+    stage: 1, // 1 split, 2 simplify
+    splitWrongCount: 0,
+    results: Array(NQ).fill(null), // 'green'|'yellow'|'red'
+    startT: 0,
+    running: false,
+    raf: null
+  };
+
+  function loadBest(){
+    try{
+      const raw = localStorage.getItem(BEST_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj) return null;
+      if (!Number.isFinite(obj.g) || !Number.isFinite(obj.y) || !Number.isFinite(obj.timeMs)) return null;
+      return obj;
+    } catch(_){
+      return null;
+    }
+  }
+
+  function bestToText(b){
+    if (!b) return "—";
+    const r = NQ - b.g - b.y;
+    return `${b.g}G ${b.y}Y ${r}R • ${formatTime(b.timeMs)}`;
+  }
+
+  function isBetter(candidate, best){
+    if (!best) return true;
+    if (candidate.g !== best.g) return candidate.g > best.g;
+    if (candidate.y !== best.y) return candidate.y > best.y;
+    return candidate.timeMs < best.timeMs;
+  }
+
+  function saveBestIfNeeded(g,y,timeMs){
+    const cand = {g, y, timeMs};
+    const best = loadBest();
+    if (isBetter(cand, best)){
+      localStorage.setItem(BEST_KEY, JSON.stringify(cand));
+      return cand;
+    }
+    return best;
+  }
+
+  function updateBestPill(){
+    bestTxt.textContent = bestToText(loadBest());
+  }
+
+  function updateTimer(){
+    if (!session.running) return;
+    const now = performance.now();
+    timeTxt.textContent = formatTime(now - session.startT);
+    session.raf = requestAnimationFrame(updateTimer);
+  }
+
+  function buildLights(){
+    lightsRow.innerHTML = "";
+    for (let i=0; i<NQ; i++){
+      const d = document.createElement('div');
+      d.className = 'light';
+      d.id = `light_${i}`;
+      lightsRow.appendChild(d);
+    }
+  }
+
+  function refreshLights(){
+    for (let i=0; i<NQ; i++){
+      const el = document.getElementById(`light_${i}`);
+      el.classList.remove('green','yellow','red');
+      const v = session.results[i];
+      if (v) el.classList.add(v);
+    }
+  }
+
+  function genOne(){
+    for (let tries=0; tries<500; tries++){
+      const d = randChoice(DENOMS);
+      const q = randChoice(Q_WEIGHTS);
+
+      let r = 0;
+      const roll = Math.random();
+      if (roll < 0.20){
+        r = 0;
+      } else {
+        const candidates = [];
+        for (let x=1; x<d; x++){
+          if (gcd(x,d) > 1) candidates.push(x);
+        }
+        if (roll < 0.70 && candidates.length > 0){
+          r = randChoice(candidates);
+        } else {
+          r = 1 + Math.floor(Math.random()*(d-1));
+        }
+      }
+
+      if (q === 0 && r === 0) continue;
+      const n = q*d + r;
+      if (n <= 0) continue;
+      if (n > 60) continue;
+
+      const g = (r === 0) ? 1 : gcd(r,d);
+      const rs = (r === 0) ? 0 : (r / g);
+      const ds = (r === 0) ? 1 : (d / g);
+
+      return {n,d,q, r, g, rs, ds};
+    }
+    // fallback
+    return {n:7,d:3,q:2,r:1,g:1,rs:1,ds:3};
+  }
+
+  function genSession(){
+    session.questions = [];
+    for (let i=0; i<NQ; i++){
+      session.questions.push(genOne());
+    }
+    session.idx = 0;
+    session.stage = 1;
+    session.splitWrongCount = 0;
+    session.results = Array(NQ).fill(null);
+  }
+
+  function showStage1(qObj){
+    session.stage = 1;
+    session.splitWrongCount = 0;
+    setStepUI(1);
+
+    stage1.style.display = 'block';
+    stage2.style.display = 'none';
+
+    n1.textContent = String(qObj.n);
+    d1.textContent = String(qObj.d);
+    d1b.textContent = String(qObj.d);
+
+    clearInputs();
+    hideHint();
+    setStatus("");
+
+    checkBtn.disabled = false;
+    checkBtn.style.display = 'inline-block';
+    checkBtn.textContent = "Check";
+    nextBtn.style.display = 'none';
+
+    qIn.focus();
+  }
+
+  function showStage2(qObj){
+    session.stage = 2;
+    setStepUI(2);
+
+    stage1.style.display = 'none';
+    stage2.style.display = 'block';
+
+    stage2Auto.style.display = 'none';
+    stage2Need.style.display = 'none';
+
+    hideHint();
+    setStatus("");
+
+    const need = (qObj.r > 0) && (qObj.g > 1);
+
+    if (qObj.r === 0){
+      stage2Auto.style.display = 'block';
+      autoLine.innerHTML = `
+        <div class="frac">
+          <div class="num">${qObj.n}</div>
+          <div class="bar"></div>
+          <div class="den">${qObj.d}</div>
+        </div>
+        <span class="op">=</span>
+        <span class="bigInt">${qObj.q}</span>
+      `;
+      autoNote.textContent = "No leftover. This is exactly a whole number.";
+      checkBtn.disabled = true;
+      nextBtn.style.display = 'inline-block';
+      nextBtn.focus();
+      return;
+    }
+
+    if (!need){
+      stage2Auto.style.display = 'block';
+      autoLine.innerHTML = `
+        <span class="bigInt">${qObj.q}</span>
+        <span class="op">+</span>
+        <div class="frac">
+          <div class="num">${qObj.r}</div>
+          <div class="bar"></div>
+          <div class="den">${qObj.d}</div>
+        </div>
+      `;
+      autoNote.textContent = "The leftover fraction is already in simplest form.";
+      checkBtn.disabled = true;
+      nextBtn.style.display = 'inline-block';
+      nextBtn.focus();
+      return;
+    }
+
+    // need simplification
+    stage2Need.style.display = 'block';
+    q2a.textContent = String(qObj.q);
+    q2b.textContent = String(qObj.q);
+    r2a.textContent = String(qObj.r);
+    d2a.textContent = String(qObj.d);
+
+    simpNumIn.value = "";
+    simpDenIn.value = "";
+
+    checkBtn.disabled = false;
+    checkBtn.textContent = "Check";
+    nextBtn.style.display = 'none';
+    simpNumIn.focus();
+  }
+
+  function renderQuestion(){
+    endScreen.style.display = 'none';
+    stage1.style.display = 'block';
+    stage2.style.display = 'none';
+
+    const i = session.idx;
+    const qObj = session.questions[i];
+
+    questionText.textContent = `Question ${i+1}/${NQ}: fill the boxes so the equality is true.`;
+    showStage1(qObj);
+
+    refreshLights();
+  }
+
+  function finishSession(){
+    session.running = false;
+    if (session.raf) cancelAnimationFrame(session.raf);
+
+    const timeMs = performance.now() - session.startT;
+    const g = session.results.filter(x => x === 'green').length;
+    const y = session.results.filter(x => x === 'yellow').length;
+    const r = session.results.filter(x => x === 'red').length;
+
+    const best = saveBestIfNeeded(g,y,timeMs);
+    updateBestPill();
+
+    questionText.textContent = "Finished.";
+    stage1.style.display = 'none';
+    stage2.style.display = 'none';
+    hintBox.style.display = 'none';
+    status.textContent = "";
+
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'none';
+
+    endScreen.style.display = 'block';
+    endSummary.textContent = `${g} green, ${y} yellow, ${r} red • time ${formatTime(timeMs)}.`;
+
+    // keep time display frozen at final
+    timeTxt.textContent = formatTime(timeMs);
+
+    playAgainBtn.focus();
+  }
+
+  function markResult(color){
+    session.results[session.idx] = color;
+    refreshLights();
+  }
+
+  function lockStage1AndShowSolution(qObj){
+    // disable stage1 inputs
+    qIn.disabled = true;
+    rIn.disabled = true;
+
+    // show solution (words only)
+    const used = qObj.q * qObj.d;
+    showHint(
+      "Solution",
+      `Correct split: ${qObj.n}/${qObj.d} = ${qObj.q} + ${qObj.r}/${qObj.d}. Because ${qObj.q}×${qObj.d}=${used}, and ${qObj.n}-${used}=${qObj.r}.`
+    );
+
+    setStatus("Let's move to the next one.", "bad");
+
+    checkBtn.disabled = true;
+    nextBtn.style.display = 'inline-block';
+    nextBtn.focus();
+  }
+
+  function checkStage1(){
+    const qObj = session.questions[session.idx];
+
+    const vq = parseIntOrNull(qIn.value);
+    const vr = parseIntOrNull(rIn.value);
+
+    if (vq === null || vr === null){
+      setStatus("Fill both boxes.", "warn");
+      return;
+    }
+
+    const ok = (vq === qObj.q) && (vr === qObj.r) && (vr < qObj.d);
+
+    if (ok){
+      // set score if not set yet
+      if (!session.results[session.idx]){
+        markResult('green');
+      }
+      setStatus("Correct.", "good");
+      hideHint();
+      triggerCelebration();
+
+      // move to stage2 (simplify view)
+      qIn.disabled = true;
+      rIn.disabled = true;
+
+      showStage2(qObj);
+      return;
+    }
+
+    session.splitWrongCount += 1;
+
+    if (session.splitWrongCount === 1){
+      markResult('yellow');
+      setStatus("Not yet. Try again.", "warn");
+      showHint(
+        "Hint",
+        `Pick units q so that q×${qObj.d} is the biggest multiple not larger than ${qObj.n}. Then leftover r = ${qObj.n} − q×${qObj.d}. (And r must be < ${qObj.d}.)`
+      );
+      return;
+    }
+
+    // second wrong -> red
+    markResult('red');
+    lockStage1AndShowSolution(qObj);
+  }
+
+  function checkStage2(){
+    const qObj = session.questions[session.idx];
+
+    // only when simplification is needed
+    const need = (qObj.r > 0) && (qObj.g > 1);
+    if (!need){
+      return;
+    }
+
+    const sn = parseIntOrNull(simpNumIn.value);
+    const sd = parseIntOrNull(simpDenIn.value);
+
+    if (sn === null || sd === null){
+      setStatus("Fill numerator and denominator.", "warn");
+      return;
+    }
+    if (sd <= 0){
+      setStatus("Denominator must be positive.", "warn");
+      return;
+    }
+
+    const eq = (sn * qObj.d === qObj.r * sd);
+    const reduced = (gcd(sn, sd) === 1);
+
+    if (eq && reduced){
+      setStatus("Done.", "good");
+      hideHint();
+      triggerCelebration();
+
+      checkBtn.disabled = true;
+      nextBtn.style.display = 'inline-block';
+      nextBtn.focus();
+      return;
+    }
+
+    setStatus("Not yet. Try again.", "warn");
+    showHint(
+      "Hint",
+      "Try dividing the leftover numerator and denominator by the same number (2, 3, 4, ...)."
+    );
+  }
+
+  function onCheck(){
+    if (!session.running) return;
+    const qObj = session.questions[session.idx];
+
+    if (session.stage === 1){
+      checkStage1();
+      return;
+    }
+
+    // stage 2
+    const need = (qObj.r > 0) && (qObj.g > 1);
+    if (!need){
+      return;
+    }
+    checkStage2();
+  }
+
+  function goNext(){
+    if (!session.running) return;
+
+    // re-enable inputs for next question
+    qIn.disabled = false;
+    rIn.disabled = false;
+    simpNumIn.disabled = false;
+    simpDenIn.disabled = false;
+
+    checkBtn.disabled = false;
+    checkBtn.style.display = 'inline-block';
+    nextBtn.style.display = 'none';
+    hideHint();
+    setStatus("");
+
+    if (session.idx >= NQ - 1){
+      finishSession();
+      return;
+    }
+
+    session.idx += 1;
+    renderQuestion();
+  }
+
+  function start(){
+    updateBestPill();
+    buildLights();
+
+    genSession();
+    refreshLights();
+
+    session.running = true;
+    session.startT = performance.now();
+    timeTxt.textContent = "0:00.0";
+    if (session.raf) cancelAnimationFrame(session.raf);
+    session.raf = requestAnimationFrame(updateTimer);
+
+    // enable controls
+    checkBtn.style.display = 'inline-block';
+    checkBtn.disabled = false;
+    nextBtn.style.display = 'none';
+
+    qIn.disabled = false;
+    rIn.disabled = false;
+
+    renderQuestion();
+  }
+
+  // ---------- events ----------
+  checkBtn.addEventListener('click', onCheck);
+  nextBtn.addEventListener('click', goNext);
+
+  restartBtn.addEventListener('click', () => {
+    start();
+  });
+
+  playAgainBtn.addEventListener('click', () => {
+    // reset check button visibility too
+    checkBtn.style.display = 'inline-block';
+    start();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){
+      if (!session.running) return;
+      if (nextBtn.style.display !== 'none' && !nextBtn.disabled){
+        goNext();
+      } else if (!checkBtn.disabled){
+        onCheck();
+      }
+    }
+  });
+
+  // init
+  start();
+})();
+</script>
+</body>
+</html>

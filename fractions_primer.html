@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fractions Primer</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.62);
+    --accent:#2563eb;
+    --sliceFill: rgba(37,99,235,0.55);
+    --sliceEmpty: rgba(255,255,255,0.92);
+    --sliceStroke: rgba(17,24,39,0.22);
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+
+  #app{ width:min(1050px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+
+  .btnrow{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  #goalRow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin: 2px 0 14px 0;
+    flex-wrap:wrap;
+  }
+  .goalLabel{
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+  }
+  .goalFrac{
+    font-size:26px;
+    font-weight:900;
+    color:rgba(17,24,39,0.90);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .frac{
+    display:inline-block;
+    vertical-align:middle;
+    text-align:center;
+    margin: 0 2px;
+    font-family: var(--mono);
+    font-weight: 900;
+    line-height: 1.0;
+  }
+  .frac .top{ display:block; padding:0 5px; transform: translateY(1px); }
+  .frac .bottom{
+    display:block;
+    padding:2px 5px 0 5px;
+    border-top:2px solid rgba(17,24,39,0.50);
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap:14px;
+    align-items:stretch;
+  }
+  @media (max-width: 900px){
+    #grid{ grid-template-columns: 1fr; }
+  }
+
+  .box{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.015);
+  }
+  .boxTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  #pizzaWrap{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:100%;
+  }
+
+  svg{
+    width:100%;
+    max-width:880px;
+    height:auto;
+    display:block;
+  }
+
+  .slice{
+    stroke: var(--sliceStroke);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .filled{ fill: var(--sliceFill); }
+  .empty{ fill: var(--sliceEmpty); }
+  .crust{
+    fill:none;
+    stroke: rgba(17,24,39,0.30);
+    stroke-width: 6;
+    vector-effect: non-scaling-stroke;
+  }
+  .ghost{
+    opacity: 0.30;
+    transition: opacity 0.25s ease;
+  }
+  .solid{
+    opacity: 1.0;
+    transition: opacity 0.25s ease;
+  }
+  .pop{
+    animation: pop 0.33s ease-out;
+  }
+  @keyframes pop{
+    from{ transform: scale(0.92); opacity: 0.65; }
+    to{ transform: scale(1.00); opacity: 1.00; }
+  }
+
+  #mathLines{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    font-weight:900;
+    font-size:20px;
+    color:rgba(17,24,39,0.90);
+  }
+  .mathLine{
+    font-family: var(--mono);
+    line-height:1.25;
+    word-break: break-word;
+  }
+  .muted{
+    font-family: var(--sans);
+    font-weight:900;
+    color:rgba(17,24,39,0.65);
+    font-size:14px;
+    line-height:1.25;
+  }
+
+  #narration{
+    margin-top:14px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    min-height:22px;
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+<div id="app">
+  <div id="top">
+    <div id="title">Fractions Primer</div>
+    <div class="btnrow">
+      <button id="newBtn" type="button">New example</button>
+      <button id="nextBtn" class="primary" type="button">Next</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="goalRow">
+      <div class="goalLabel">We will build</div>
+      <div class="goalFrac" id="targetFrac">—</div>
+    </div>
+
+    <div id="grid">
+      <div class="box">
+        <div class="boxTitle">Picture</div>
+        <div id="pizzaWrap">
+          <svg id="pizzaSvg" viewBox="0 0 860 320" aria-label="pizza"></svg>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="boxTitle">Math (same idea)</div>
+        <div id="mathLines">
+          <div class="muted" id="mathIntro">—</div>
+          <div class="mathLine" id="lineA"></div>
+          <div class="mathLine" id="lineB"></div>
+          <div class="mathLine" id="lineC"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="narration">—</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [2, 3, 4, 5, 6, 8];
+  const M_EXTRA = 3;
+  const M_CAP = 11;
+
+  const newBtn = document.getElementById('newBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const targetFrac = document.getElementById('targetFrac');
+
+  const svg = document.getElementById('pizzaSvg');
+
+  const mathIntro = document.getElementById('mathIntro');
+  const lineA = document.getElementById('lineA');
+  const lineB = document.getElementById('lineB');
+  const lineC = document.getElementById('lineC');
+
+  const narration = document.getElementById('narration');
+
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function fracHTML(num, den){
+    return `<span class="frac"><span class="top">${num}</span><span class="bottom">${den}</span></span>`;
+  }
+
+  function sumHTML(k, n){
+    const f = fracHTML(1, n);
+    if (k <= 6){
+      return Array(k).fill(f).join(" + ");
+    }
+    return `${f} + ${f} + … (${k} times)`;
+  }
+
+  function clearSvg(){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+
+  function svgEl(tag, attrs={}){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+
+  function wedgePath(cx, cy, r, a0, a1){
+    const x0 = cx + r*Math.cos(a0);
+    const y0 = cy + r*Math.sin(a0);
+    const x1 = cx + r*Math.cos(a1);
+    const y1 = cy + r*Math.sin(a1);
+    const large = ((a1 - a0) > Math.PI) ? 1 : 0;
+    return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+  }
+
+  function drawPizza(cx, cy, r, n, filledCount, groupOpacityClass, popSliceIndex){
+    const g = svgEl('g', { class: groupOpacityClass });
+
+    const start = -Math.PI/2;
+    const step = 2*Math.PI/n;
+
+    for (let i=0; i<n; i++){
+      const a0 = start + i*step;
+      const a1 = start + (i+1)*step;
+      const d = wedgePath(cx, cy, r, a0, a1);
+
+      const isFilled = (i < filledCount);
+      let cls = "slice " + (isFilled ? "filled" : "empty");
+      if (isFilled && popSliceIndex === i) cls += " pop";
+
+      g.appendChild(svgEl('path', { d, class: cls }));
+    }
+
+    g.appendChild(svgEl('circle', { cx, cy, r, class: "crust" }));
+    return g;
+  }
+
+  // state
+  let n = 4;
+  let m = 7;
+  let k = 0;       // how many pieces have been taken (0..m)
+  let prevK = 0;
+
+  function pickExample(){
+    n = randChoice(DENOMS);
+    const mMax = Math.min(n + M_EXTRA, 2*n, M_CAP);
+
+    // Always m >= 2 so the "repeated 1/n" idea appears
+    const lo = 2;
+    const hi = Math.max(lo, mMax);
+
+    // Sometimes pick an improper fraction (m > n), but keep it small.
+    if (Math.random() < 0.35 && (n + 1) <= hi){
+      m = randInt(n + 1, hi);
+    } else {
+      m = randInt(lo, Math.min(n, hi));
+    }
+
+    k = 0;
+    prevK = 0;
+    updateAll();
+  }
+
+  function updateHeader(){
+    targetFrac.innerHTML = fracHTML(m, n);
+  }
+
+  function updateNarration(){
+    if (k === 0){
+      narration.textContent = `We split 1 whole pizza into ${n} equal pieces.`;
+      return;
+    }
+    if (k === 1){
+      narration.textContent = `One piece is 1/${n}.`;
+      return;
+    }
+    if (k < m){
+      narration.textContent = `Add one more 1/${n}. Now we have ${k} pieces, so that's ${k}/${n}.`;
+      return;
+    }
+    // k === m
+    if (m > n){
+      narration.textContent = `${m}/${n} means ${m} copies of 1/${n}. It can take more than one whole pizza.`;
+    } else {
+      narration.textContent = `${m}/${n} means ${m} copies of 1/${n}.`;
+    }
+  }
+
+  function updateMath(){
+    if (k === 0){
+      mathIntro.textContent = `Each piece is 1/${n}.`;
+      lineA.innerHTML = "";
+      lineB.innerHTML = "";
+      lineC.innerHTML = "";
+      return;
+    }
+
+    mathIntro.textContent = `We are adding pieces of size 1/${n}.`;
+    lineA.innerHTML = `${k} × ${fracHTML(1, n)}`;
+    lineB.innerHTML = `= ${sumHTML(k, n)}`;
+    lineC.innerHTML = `= ${fracHTML(k, n)}`;
+
+    if (k === 1){
+      // keep it extra clean for the very first meaningful step
+      lineA.innerHTML = `${fracHTML(1, n)}`;
+      lineB.innerHTML = "";
+      lineC.innerHTML = "";
+    }
+  }
+
+  function updatePizza(){
+    clearSvg();
+
+    // layout
+    const cy = 160;
+    const r = 120;
+
+    const needsTwo = (m > n); // target needs >1 whole
+
+    let cx1 = 430;
+    let cx2 = 430;
+
+    if (needsTwo){
+      cx1 = 260;
+      cx2 = 600;
+    }
+
+    // which slice (if any) was just added?
+    let popPizza = -1;
+    let popSlice = -1;
+    if (k > 0 && k === prevK + 1){
+      const idx = k - 1;
+      popPizza = Math.floor(idx / n);     // 0 or 1
+      popSlice = idx % n;
+    }
+
+    // filled counts per pizza
+    const filled1 = Math.min(k, n);
+    const filled2 = Math.max(0, k - n);
+
+    // First pizza always solid
+    const g1 = drawPizza(cx1, cy, r, n, filled1, "solid", (popPizza === 0 ? popSlice : -1));
+    svg.appendChild(g1);
+
+    if (needsTwo){
+      const secondClass = (k <= n) ? "ghost" : "solid";
+      const g2 = drawPizza(cx2, cy, r, n, filled2, secondClass, (popPizza === 1 ? popSlice : -1));
+      svg.appendChild(g2);
+    }
+  }
+
+  function updateButtons(){
+    if (k === 0){
+      nextBtn.textContent = "Show 1 piece";
+      nextBtn.disabled = false;
+      return;
+    }
+    if (k < m){
+      nextBtn.textContent = `Add one more 1/${n}`;
+      nextBtn.disabled = false;
+      return;
+    }
+    nextBtn.textContent = "Done";
+    nextBtn.disabled = true;
+  }
+
+  function updateAll(){
+    updateHeader();
+    updateNarration();
+    updateMath();
+    updatePizza();
+    updateButtons();
+  }
+
+  function nextStep(){
+    if (k >= m) return;
+    prevK = k;
+    k += 1;
+    updateAll();
+  }
+
+  newBtn.addEventListener('click', pickExample);
+  nextBtn.addEventListener('click', nextStep);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      nextStep();
+    }
+  });
+
+  // init
+  pickExample();
+})();
+</script>
+</body>
+</html>
