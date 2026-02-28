@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Decimals Primer — Distance</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.62);
+    --accent:#2563eb;
+
+    /* Three related shades for the three place-value contributions */
+    --uFill: rgba(37,99,235,0.22);
+    --tFill: rgba(37,99,235,0.45);
+    --hFill: rgba(37,99,235,0.82);
+    --newFill: rgba(37,99,235,0.98);
+
+    --uText: rgba(37,99,235,0.68);
+    --tText: rgba(37,99,235,0.82);
+    --hText: rgba(37,99,235,0.98);
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+
+  #app{ width:min(1050px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+
+  .btnrow{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  #goalRow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin: 2px 0 14px 0;
+    flex-wrap:wrap;
+  }
+  .goalLabel{
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+  }
+  .goalFrac{
+    font-size:26px;
+    font-weight:900;
+    color:rgba(17,24,39,0.90);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .goalSmall{
+    font-size:14px;
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    font-family: var(--sans);
+  }
+
+  .frac{
+    display:inline-block;
+    vertical-align:middle;
+    text-align:center;
+    margin: 0 2px;
+    font-family: var(--mono);
+    font-weight: 900;
+    line-height: 1.0;
+  }
+  .frac .top{ display:block; padding:0 5px; transform: translateY(1px); }
+  .frac .bottom{
+    display:block;
+    padding:2px 5px 0 5px;
+    border-top:2px solid rgba(17,24,39,0.50);
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns: 1.10fr 0.90fr;
+    gap:14px;
+    align-items:stretch;
+  }
+  @media (max-width: 900px){
+    #grid{ grid-template-columns: 1fr; }
+  }
+
+  .box{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.015);
+  }
+  .boxTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  .visualStack{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .subbox{
+    border:1px solid rgba(0,0,0,0.10);
+    border-radius:14px;
+    padding:10px;
+    background:rgba(255,255,255,0.75);
+  }
+  .subTitle{
+    font-size:11px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin:0 0 8px 0;
+  }
+
+  svg{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  .tick{
+    stroke: rgba(17,24,39,0.28);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .tickMinor{
+    stroke: rgba(17,24,39,0.18);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .axis{
+    stroke: rgba(17,24,39,0.38);
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+  .axisLight{
+    stroke: rgba(17,24,39,0.22);
+    stroke-width: 2.5;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+  .majorDot{
+    fill: rgba(17,24,39,0.48);
+  }
+  .numLabel{
+    fill: rgba(17,24,39,0.72);
+    font-weight: 900;
+    font-size: 14px;
+    font-family: var(--mono);
+  }
+  .hintLabel{
+    fill: rgba(17,24,39,0.50);
+    font-weight: 900;
+    font-size: 12px;
+    font-family: var(--sans);
+    letter-spacing: 0.02em;
+  }
+
+  .barU{ fill: var(--uFill); }
+  .barT{ fill: var(--tFill); }
+  .barH{ fill: var(--hFill); }
+  .barNew{
+    fill: var(--newFill);
+    animation: popSeg 0.30s ease-out;
+  }
+  @keyframes popSeg{
+    from{ opacity: 0.30; }
+    to{ opacity: 1.0; }
+  }
+
+  .targetLine{
+    stroke: rgba(17,24,39,0.70);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 6 6;
+    stroke-linecap: round;
+  }
+  .targetLabel{
+    fill: rgba(17,24,39,0.82);
+    font-weight: 900;
+    font-size: 15px;
+    font-family: var(--mono);
+  }
+
+  #mathLines{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    font-weight:900;
+    font-size:20px;
+    color:rgba(17,24,39,0.90);
+  }
+  .mathLine{
+    font-family: var(--mono);
+    line-height:1.25;
+    word-break: break-word;
+  }
+  .muted{
+    font-family: var(--sans);
+    font-weight:900;
+    color:rgba(17,24,39,0.65);
+    font-size:14px;
+    line-height:1.25;
+  }
+  .faint{
+    opacity: 0.35;
+  }
+
+  /* Text colors matching the bar colors */
+  .cU{ color: var(--uText); }
+  .cT{ color: var(--tText); }
+  .cH{ color: var(--hText); }
+
+  .cU .frac .bottom{ border-top-color: var(--uText); }
+  .cT .frac .bottom{ border-top-color: var(--tText); }
+  .cH .frac .bottom{ border-top-color: var(--hText); }
+
+  #bottomBox{
+    margin-top:14px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    min-height:24px;
+    line-height:1.25;
+  }
+  .dec{
+    font-family: var(--mono);
+    font-weight: 900;
+    font-size: 26px;
+    letter-spacing: 0.01em;
+  }
+  .dot{
+    color: rgba(17,24,39,0.38);
+    padding: 0 1px;
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+<div id="app">
+  <div id="top">
+    <div id="title">Decimals Primer — Distance</div>
+    <div class="btnrow">
+      <button id="newBtn" type="button">New example</button>
+      <button id="nextBtn" class="primary" type="button">Next</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="goalRow">
+      <div class="goalLabel">We will build</div>
+      <div class="goalFrac" id="targetFrac">—</div>
+    </div>
+
+    <div id="grid">
+      <div class="box">
+        <div class="boxTitle">Picture</div>
+
+        <div class="visualStack">
+          <div class="subbox">
+            <div class="subTitle">Unit (0 to 1)</div>
+            <svg id="unitSvg" viewBox="0 0 860 150" aria-label="unit"></svg>
+          </div>
+
+          <div class="subbox">
+            <div class="subTitle">Build the distance (number line)</div>
+            <svg id="trackSvg" viewBox="0 0 860 190" aria-label="track"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="boxTitle">Math</div>
+        <div id="mathLines">
+          <div class="muted" id="mathIntro">—</div>
+          <div class="mathLine" id="line0"></div>
+          <div class="mathLine" id="line1" style="display:none;"></div>
+          <div class="mathLine" id="line2" style="display:none;"></div>
+          <div class="mathLine" id="line3" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottomBox">—</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DEN = 100;
+
+  const newBtn = document.getElementById('newBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const targetFrac = document.getElementById('targetFrac');
+
+  const unitSvg = document.getElementById('unitSvg');
+  const trackSvg = document.getElementById('trackSvg');
+
+  const mathIntro = document.getElementById('mathIntro');
+  const line0 = document.getElementById('line0');
+  const line1 = document.getElementById('line1');
+  const line2 = document.getElementById('line2');
+  const line3 = document.getElementById('line3');
+
+  const bottomBox = document.getElementById('bottomBox');
+
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+  function chance(p){ return Math.random() < p; }
+
+  function fracHTML(num, den){
+    return `<span class="frac"><span class="top">${num}</span><span class="bottom">${den}</span></span>`;
+  }
+
+  function clearSvg(svg){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  function svgEl(tag, attrs={}){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+  function textEl(svg, x, y, txt, cls){
+    const t = svgEl('text', {x, y, class: cls});
+    t.textContent = txt;
+    svg.appendChild(t);
+  }
+
+  // Layout constants (similar to the fractions distance app)
+  const X0 = 130;
+  const UNIT_PX = 300;
+  const TRACK_W = 620;
+
+  // Unit svg positions
+  const UNIT_Y = 78;
+  const UNIT_BAR_Y = 40;
+  const BAR_H = 14;
+
+  // Track svg positions
+  const TRACK_Y = 102;
+  const TRACK_BAR_Y = 58;
+
+  // State
+  let N = 234;
+  let U = 2, T = 3, O = 4;
+
+  // phase:
+  // 0: show target fraction
+  // 1: show (200+30+4)/100
+  // 2: show 200/100 + 30/100 + 4/100
+  // 3: show 2 + 3/10 + 4/100 and build the distance
+  // 4: done (reveal decimal explanation at bottom)
+  let phase = 0;
+
+  // Built pieces (during phase >= 3)
+  let uBuilt = 0;
+  let tBuilt = 0;
+  let hBuilt = 0;
+  let lastAction = null; // "unit" | "tenth" | "hundredth" | null
+
+  function pickExample(){
+    // Build N = 100U + 10T + O.
+    // Bias toward U >= 1 so we often get examples like 345/100.
+    U = chance(0.72) ? randInt(1,4) : 0;
+    T = randInt(0,9);
+    O = randInt(0,9);
+
+    // Avoid exact 0.00
+    if (U === 0 && T === 0 && O === 0){
+      O = randInt(1,9);
+    }
+
+    N = 100*U + 10*T + O;
+
+    phase = 0;
+    uBuilt = 0;
+    tBuilt = 0;
+    hBuilt = 0;
+    lastAction = null;
+
+    updateAll();
+  }
+
+  function trackUnits(){
+    // Show up to U+1 (at least 2 units for context)
+    return Math.max(2, U + 1);
+  }
+
+  function pxPerUnit(){
+    return TRACK_W / trackUnits();
+  }
+
+  function builtHund(){
+    return 100*uBuilt + 10*tBuilt + hBuilt;
+  }
+
+  function isBuiltComplete(){
+    return (uBuilt === U) && (tBuilt === T) && (hBuilt === O);
+  }
+
+  function show(el, yes){
+    el.style.display = yes ? "block" : "none";
+  }
+
+  function spanNum(cls, val, faint=false){
+    const c = faint ? `${cls} faint` : cls;
+    return `<span class="${c}">${val}</span>`;
+  }
+
+  function updateHeader(){
+    targetFrac.innerHTML = `${fracHTML(N, 100)} <span class="goalSmall">units</span>`;
+  }
+
+  function updateButtons(){
+    if (phase === 0){
+      nextBtn.textContent = "Split numerator";
+      nextBtn.disabled = false;
+      return;
+    }
+    if (phase === 1){
+      nextBtn.textContent = "Split into fractions";
+      nextBtn.disabled = false;
+      return;
+    }
+    if (phase === 2){
+      nextBtn.textContent = "Simplify";
+      nextBtn.disabled = false;
+      return;
+    }
+    if (phase === 3){
+      if (uBuilt < U){
+        nextBtn.textContent = "Add 1 unit";
+        nextBtn.disabled = false;
+        return;
+      }
+      if (tBuilt < T){
+        nextBtn.textContent = "Add 1/10";
+        nextBtn.disabled = false;
+        return;
+      }
+      if (hBuilt < O){
+        nextBtn.textContent = "Add 1/100";
+        nextBtn.disabled = false;
+        return;
+      }
+      nextBtn.textContent = "Finish";
+      nextBtn.disabled = false;
+      return;
+    }
+    nextBtn.textContent = "Done";
+    nextBtn.disabled = true;
+  }
+
+  function updateMath(){
+    const A = 100*U;
+    const B = 10*T;
+    const C = O;
+
+    mathIntro.textContent = "Rewrite the fraction using place value.";
+    line0.innerHTML = `${fracHTML(N, 100)}`;
+
+    const Ahtml = spanNum("cU", A, A === 0);
+    const Bhtml = spanNum("cT", B, B === 0);
+    const Chtml = spanNum("cH", C, C === 0);
+    const numSum = `${Ahtml} + ${Bhtml} + ${Chtml}`;
+    line1.innerHTML = `= ${fracHTML(numSum, 100)}`;
+
+    const tA = `<span class="cU${A===0 ? " faint":""}">${fracHTML(A, 100)}</span>`;
+    const tB = `<span class="cT${B===0 ? " faint":""}">${fracHTML(B, 100)}</span>`;
+    const tC = `<span class="cH${C===0 ? " faint":""}">${fracHTML(C, 100)}</span>`;
+    line2.innerHTML = `= ${tA} + ${tB} + ${tC}`;
+
+    const uTerm = spanNum("cU", U, U === 0);
+    const tTerm = `<span class="cT${T===0 ? " faint":""}">${fracHTML(T, 10)}</span>`;
+    const hTerm = `<span class="cH${O===0 ? " faint":""}">${fracHTML(O, 100)}</span>`;
+    line3.innerHTML = `= ${uTerm} + ${tTerm} + ${hTerm}`;
+
+    show(line1, phase >= 1);
+    show(line2, phase >= 2);
+    show(line3, phase >= 3);
+  }
+
+  function updateBottom(){
+    if (phase < 4){
+      bottomBox.textContent = "—";
+      return;
+    }
+
+    const dec = `
+      <span class="dec">
+        <span class="cU">${U}</span><span class="dot">.</span><span class="cT">${T}</span><span class="cH">${O}</span>
+      </span>
+    `;
+
+    bottomBox.innerHTML =
+      `Decimal form: ${dec}. ` +
+      `It means <span class="cU">${U}</span> unit(s) + ` +
+      `<span class="cT">${T}</span> tenth(s) + ` +
+      `<span class="cH">${O}</span> hundredth(s).`;
+  }
+
+  function drawUnit(){
+    clearSvg(unitSvg);
+
+    const xA = X0;
+    const xB = X0 + UNIT_PX;
+
+    unitSvg.appendChild(svgEl('line', {x1:xA, y1:UNIT_Y, x2:xB, y2:UNIT_Y, class:"axis"}));
+    unitSvg.appendChild(svgEl('circle', {cx:xA, cy:UNIT_Y, r:4, class:"majorDot"}));
+    unitSvg.appendChild(svgEl('circle', {cx:xB, cy:UNIT_Y, r:4, class:"majorDot"}));
+
+    textEl(unitSvg, xA - 10, UNIT_Y + 34, "0", "numLabel");
+    textEl(unitSvg, xB - 10, UNIT_Y + 34, "1", "numLabel");
+
+    let piece = "unit";
+    if (phase >= 3){
+      if (uBuilt < U) piece = "unit";
+      else if (tBuilt < T) piece = "tenth";
+      else if (hBuilt < O) piece = "hundredth";
+      else piece = "unit";
+    }
+
+    if (piece === "unit"){
+      unitSvg.appendChild(svgEl('rect', {
+        x: xA,
+        y: UNIT_BAR_Y,
+        width: UNIT_PX,
+        height: BAR_H,
+        rx: 7, ry: 7,
+        class: "barU"
+      }));
+      textEl(unitSvg, xA, UNIT_BAR_Y - 8, "1 unit", "numLabel");
+      return;
+    }
+
+    const step = UNIT_PX / 10.0;
+    for (let i=0; i<=10; i++){
+      const x = xA + i*step;
+      const cls = (i===0 || i===10) ? "tick" : "tickMinor";
+      const h = (i===0 || i===10) ? 18 : 12;
+      unitSvg.appendChild(svgEl('line', {x1:x, y1:UNIT_Y - h, x2:x, y2:UNIT_Y + h, class:cls}));
+    }
+
+    if (piece === "tenth"){
+      unitSvg.appendChild(svgEl('rect', {
+        x: xA,
+        y: UNIT_BAR_Y,
+        width: step,
+        height: BAR_H,
+        rx: 7, ry: 7,
+        class: "barT"
+      }));
+      textEl(unitSvg, xA, UNIT_BAR_Y - 8, "1/10", "numLabel");
+      return;
+    }
+
+    const w100 = UNIT_PX / 100.0;
+    unitSvg.appendChild(svgEl('rect', {
+      x: xA,
+      y: UNIT_BAR_Y,
+      width: w100,
+      height: BAR_H,
+      rx: 3, ry: 3,
+      class: "barH"
+    }));
+    textEl(unitSvg, xA, UNIT_BAR_Y - 8, "1/100", "numLabel");
+  }
+
+  function drawTrack(){
+    clearSvg(trackSvg);
+
+    const units = trackUnits();
+    const uW = pxPerUnit();
+
+    const xA = X0;
+    const xB = X0 + TRACK_W;
+
+    trackSvg.appendChild(svgEl('line', {x1:xA, y1:TRACK_Y, x2:xB, y2:TRACK_Y, class:"axisLight"}));
+
+    for (let i=0; i<=units; i++){
+      const x = xA + i*uW;
+      trackSvg.appendChild(svgEl('circle', {cx:x, cy:TRACK_Y, r:4, class:"majorDot"}));
+      textEl(trackSvg, x - 8, TRACK_Y + 34, String(i), "numLabel");
+      trackSvg.appendChild(svgEl('line', {x1:x, y1:TRACK_Y - 18, x2:x, y2:TRACK_Y + 18, class:"tick"}));
+    }
+
+    if (phase >= 3 && uBuilt >= U){
+      const base = U;
+      for (let i=1; i<10; i++){
+        const x = xA + (base + i/10)*uW;
+        trackSvg.appendChild(svgEl('line', {x1:x, y1:TRACK_Y - 12, x2:x, y2:TRACK_Y + 12, class:"tickMinor"}));
+      }
+    }
+
+    const targetX = xA + (N/100.0) * uW;
+    trackSvg.appendChild(svgEl('line', {
+      x1: targetX, y1: TRACK_Y - 78,
+      x2: targetX, y2: TRACK_Y + 46,
+      class: "targetLine"
+    }));
+    textEl(trackSvg, Math.min(targetX + 8, xB - 140), TRACK_Y - 84, `target ${N}/100`, "targetLabel");
+
+    if (phase >= 3){
+      if (uBuilt > 0){
+        trackSvg.appendChild(svgEl('rect', {
+          x: xA,
+          y: TRACK_BAR_Y,
+          width: uBuilt * uW,
+          height: BAR_H,
+          rx: 7, ry: 7,
+          class: "barU"
+        }));
+      }
+
+      if (tBuilt > 0){
+        trackSvg.appendChild(svgEl('rect', {
+          x: xA + U*uW,
+          y: TRACK_BAR_Y,
+          width: (tBuilt/10.0) * uW,
+          height: BAR_H,
+          rx: 7, ry: 7,
+          class: "barT"
+        }));
+      }
+
+      if (hBuilt > 0){
+        trackSvg.appendChild(svgEl('rect', {
+          x: xA + U*uW + (T/10.0)*uW,
+          y: TRACK_BAR_Y,
+          width: (hBuilt/100.0) * uW,
+          height: BAR_H,
+          rx: 7, ry: 7,
+          class: "barH"
+        }));
+      }
+
+      if (lastAction){
+        let segX = 0;
+        let segW = 0;
+        if (lastAction === "unit"){
+          segX = xA + (uBuilt - 1) * uW;
+          segW = uW;
+        } else if (lastAction === "tenth"){
+          segX = xA + U*uW + (tBuilt - 1) * (uW/10.0);
+          segW = uW/10.0;
+        } else if (lastAction === "hundredth"){
+          segX = xA + U*uW + (T/10.0)*uW + (hBuilt - 1) * (uW/100.0);
+          segW = uW/100.0;
+        }
+        if (segW > 0){
+          trackSvg.appendChild(svgEl('rect', {
+            x: segX,
+            y: TRACK_BAR_Y,
+            width: segW,
+            height: BAR_H,
+            rx: 7, ry: 7,
+            class: "barNew"
+          }));
+        }
+      }
+
+      const bH = builtHund();
+      if (bH > 0){
+        const endX = xA + (bH/100.0)*uW;
+        const label = (bH % 100 === 0) ? String(bH/100) : `${bH}/100`;
+        textEl(trackSvg, Math.max(xA, endX - 30), TRACK_BAR_Y - 10, label, "numLabel");
+      } else {
+        textEl(trackSvg, xA, TRACK_BAR_Y - 10, "0", "numLabel");
+      }
+    }
+  }
+
+  function updateAll(){
+    updateHeader();
+    updateButtons();
+    updateMath();
+    updateBottom();
+    drawUnit();
+    drawTrack();
+  }
+
+  function nextStep(){
+    lastAction = null;
+
+    if (phase === 0){
+      phase = 1;
+      updateAll();
+      return;
+    }
+    if (phase === 1){
+      phase = 2;
+      updateAll();
+      return;
+    }
+    if (phase === 2){
+      phase = 3;
+      updateAll();
+      return;
+    }
+    if (phase === 3){
+      if (uBuilt < U){
+        uBuilt += 1;
+        lastAction = "unit";
+      } else if (tBuilt < T){
+        tBuilt += 1;
+        lastAction = "tenth";
+      } else if (hBuilt < O){
+        hBuilt += 1;
+        lastAction = "hundredth";
+      }
+
+      if (isBuiltComplete()){
+        phase = 4;
+      }
+
+      updateAll();
+      return;
+    }
+  }
+
+  newBtn.addEventListener('click', pickExample);
+  nextBtn.addEventListener('click', nextStep);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      nextStep();
+    }
+  });
+
+  pickExample();
+})();
+</script>
+</body>
+</html>

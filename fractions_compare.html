@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compare Fractions</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.60);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --bad:#dc2626;
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+
+  #celebration-area{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:10;
+    overflow:hidden;
+  }
+
+  #app{ width:min(980px, 100%); }
+
+  /* top */
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+  #topRight{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .pill{
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    font-weight:900;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:rgba(17,24,39,0.70);
+  }
+  .pill .mono{ font-family:var(--mono); letter-spacing:0.02em; }
+  .pill .blue{ color:var(--accent); }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  /* main card */
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  /* lights */
+  #lightsRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .light{
+    width:18px; height:18px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,0.16);
+    background:rgba(0,0,0,0.08);
+  }
+  .light.green{ background:rgba(22,163,74,0.75); border-color:rgba(22,163,74,0.55); }
+  .light.red{ background:rgba(220,38,38,0.78); border-color:rgba(220,38,38,0.60); }
+
+  #questionText{
+    font-weight:900;
+    font-size:22px;
+    color:rgba(17,24,39,0.85);
+    margin-bottom:12px;
+  }
+
+  /* sides */
+  #sides{
+    display:grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap:14px;
+    margin-bottom:14px;
+    align-items:stretch;
+  }
+  @media (max-width: 760px){
+    #sides{ grid-template-columns: 1fr; }
+  }
+
+  .side{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.02);
+  }
+  .sideHeader{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  .fracWrap{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:150px;
+  }
+
+  .bigFrac{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-weight:900;
+    color:rgba(17,24,39,0.92);
+    font-size:44px;
+    line-height:1.0;
+  }
+  .bigFrac .bar{
+    width:120px;
+    height:4px;
+    background:rgba(0,0,0,0.40);
+    border-radius:4px;
+    margin:8px 0;
+  }
+
+  /* middle sign choices */
+  #mid{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #signRow{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:center;
+    padding:6px 2px;
+  }
+  .signBtn{
+    width:76px;
+    height:76px;
+    padding:0;
+    border-radius:16px;
+    border:2px solid rgba(0,0,0,0.14);
+    background:var(--panel);
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:42px;
+    line-height:1;
+    color:rgba(17,24,39,0.85);
+    cursor:pointer;
+  }
+  .signBtn:disabled{ opacity:0.55; cursor:default; }
+  .signBtn.good{
+    background:rgba(22,163,74,0.92);
+    border-color:rgba(22,163,74,0.55);
+    color:#fff;
+  }
+  .signBtn.bad{
+    background:rgba(220,38,38,0.90);
+    border-color:rgba(220,38,38,0.60);
+    color:#fff;
+  }
+  .signBtn.good:disabled,
+  .signBtn.bad:disabled{ opacity:1; }
+
+  .note{
+    text-align:center;
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    margin-top:6px;
+  }
+
+  /* answer buttons (kept for compatibility; unused) */
+  #answerRow{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .answerBtn{
+    min-width:220px;
+    font-size:16px;
+    border-radius:14px;
+    padding:12px 16px;
+  }
+  .answerBtn.primary{
+    background:rgba(37,99,235,0.95);
+    border-color:rgba(37,99,235,0.22);
+    color:#fff;
+  }
+  .answerBtn.secondary{
+    background:rgba(0,0,0,0.03);
+  }
+
+  /* explanation box */
+  #hintBox{
+    margin-top:14px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:#fff;
+    display:none;
+  }
+  #hintTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  #hintText{
+    font-weight:900;
+    color:rgba(17,24,39,0.85);
+    line-height:1.25;
+    white-space:pre-line;
+  }
+
+  #status{
+    text-align:center;
+    font-weight:900;
+    min-height:24px;
+    margin-top:12px;
+    color:var(--muted);
+  }
+  #status.good{ color:var(--good); }
+  #status.bad{ color:var(--bad); }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  /* end screen */
+  #endScreen{
+    display:none;
+    text-align:center;
+    margin-top:12px;
+    padding-top:8px;
+    border-top:1px solid rgba(0,0,0,0.08);
+  }
+  #endTitle{
+    font-weight:900;
+    font-size:22px;
+    margin-bottom:6px;
+  }
+  #endSummary{
+    font-weight:900;
+    color:rgba(17,24,39,0.70);
+    margin-bottom:14px;
+  }
+
+  /* balloons */
+  .balloon{
+    position:absolute;
+    bottom:-100px;
+    width:40px;
+    height:50px;
+    border-radius:50%;
+    opacity:0.92;
+    animation: floatUp 3.8s ease-in forwards;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.18);
+  }
+  @keyframes floatUp{
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(18deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+
+<div id="celebration-area"></div>
+
+<div id="app">
+  <div id="top">
+    <div id="title">Compare Fractions</div>
+    <div id="topRight">
+      <div class="pill">BEST <span class="mono" id="bestTxt">—</span></div>
+      <div class="pill">TIME <span class="mono blue" id="timeTxt">0:00.0</span></div>
+      <button id="restartBtn" type="button">Restart</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="lightsRow"></div>
+
+    <div id="questionText">—</div>
+
+    <div id="sides">
+      <div class="side">
+        <div class="sideHeader">Left</div>
+        <div class="fracWrap" id="leftFrac"></div>
+      </div>
+
+      <div id="mid" aria-label="Choose the comparison sign">
+        <div id="signRow">
+          <button class="signBtn" id="btnLess" type="button" aria-label="Left is less than right">&lt;</button>
+          <button class="signBtn" id="btnEq" type="button" aria-label="Left equals right">=</button>
+          <button class="signBtn" id="btnGreater" type="button" aria-label="Left is greater than right">&gt;</button>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="sideHeader">Right</div>
+        <div class="fracWrap" id="rightFrac"></div>
+      </div>
+    </div>
+
+    <div class="note">Choose the correct comparison.</div>
+
+    <div id="hintBox">
+      <div id="hintTitle">Explanation</div>
+      <div id="hintText"></div>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="actions">
+      <button id="nextBtn" type="button" style="display:none;">Next</button>
+    </div>
+
+    <div id="endScreen">
+      <div id="endTitle">Done</div>
+      <div id="endSummary">—</div>
+      <button id="playAgainBtn" class="primary" type="button">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NQ = 5;
+  const BEST_KEY = "fractions_compare_best_v1";
+
+  // UI
+  const lightsRow = document.getElementById('lightsRow');
+  const questionText = document.getElementById('questionText');
+
+  const leftFrac = document.getElementById('leftFrac');
+  const rightFrac = document.getElementById('rightFrac');
+
+  const btnLess = document.getElementById('btnLess');
+  const btnEq = document.getElementById('btnEq');
+  const btnGreater = document.getElementById('btnGreater');
+
+  const nextBtn = document.getElementById('nextBtn');
+
+  const hintBox = document.getElementById('hintBox');
+  const hintText = document.getElementById('hintText');
+
+  const status = document.getElementById('status');
+
+  const timeTxt = document.getElementById('timeTxt');
+  const bestTxt = document.getElementById('bestTxt');
+
+  const restartBtn = document.getElementById('restartBtn');
+
+  const endScreen = document.getElementById('endScreen');
+  const endSummary = document.getElementById('endSummary');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+
+  const celebrationArea = document.getElementById('celebration-area');
+
+  // helpers
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function formatTime(ms){
+    const t = ms/1000;
+    const m = Math.floor(t/60);
+    const s = Math.floor(t%60);
+    const tenths = Math.floor((t - Math.floor(t))*10 + 1e-9);
+    return `${m}:${String(s).padStart(2,'0')}.${tenths}`;
+  }
+
+  function setStatus(text, cls=""){
+    status.textContent = text;
+    status.classList.remove('good','bad');
+    if (cls) status.classList.add(cls);
+  }
+
+  function hideHint(){
+    hintBox.style.display = 'none';
+    hintText.textContent = "";
+  }
+  function showExplanation(text){
+    hintText.textContent = text;
+    hintBox.style.display = 'block';
+  }
+
+  function triggerCelebration(){
+    const colors = ['#ef4444', '#2563eb', '#16a34a', '#f59e0b', '#a855f7'];
+    for (let i=0; i<15; i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.style.left = (Math.random()*94) + '%';
+      b.style.background = colors[Math.floor(Math.random()*colors.length)];
+      b.style.animationDuration = (3 + Math.random()*1.6) + 's';
+      celebrationArea.appendChild(b);
+      setTimeout(() => { try { b.remove(); } catch(_){} }, 5200);
+    }
+  }
+
+  // best
+  function loadBest(){
+    try{
+      const raw = localStorage.getItem(BEST_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj) return null;
+      if (!Number.isFinite(obj.g) || !Number.isFinite(obj.timeMs)) return null;
+      return { g: obj.g, timeMs: obj.timeMs };
+    } catch(_){
+      return null;
+    }
+  }
+  function bestToText(b){
+    if (!b) return "—";
+    const g = Math.max(0, Math.min(NQ, b.g));
+    const r = NQ - g;
+    return `${g}G ${r}R • ${formatTime(b.timeMs)}`;
+  }
+  function isBetter(candidate, best){
+    if (!best) return true;
+    if (candidate.g !== best.g) return candidate.g > best.g;
+    return candidate.timeMs < best.timeMs;
+  }
+  function saveBestIfNeeded(g, timeMs){
+    const cand = {g, timeMs};
+    const best = loadBest();
+    if (isBetter(cand, best)){
+      localStorage.setItem(BEST_KEY, JSON.stringify(cand));
+      return cand;
+    }
+    return best;
+  }
+  function updateBestPill(){
+    bestTxt.textContent = bestToText(loadBest());
+  }
+
+  // lights
+  function buildLights(){
+    lightsRow.innerHTML = "";
+    for (let i=0; i<NQ; i++){
+      const d = document.createElement('div');
+      d.className = "light";
+      d.id = `light_${i}`;
+      lightsRow.appendChild(d);
+    }
+  }
+  function refreshLights(results){
+    for (let i=0; i<NQ; i++){
+      const el = document.getElementById(`light_${i}`);
+      el.classList.remove('green','red');
+      const v = results[i];
+      if (v) el.classList.add(v);
+    }
+  }
+
+  // fraction helpers
+  function gcd(a,b){
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0){
+      const t = a % b;
+      a = b;
+      b = t;
+    }
+    return a;
+  }
+  function lcm(a,b){
+    return Math.abs(a*b) / gcd(a,b);
+  }
+
+  function fracHTML(num, den){
+    return `
+      <div class="bigFrac" aria-label="${num} over ${den}">
+        <div>${num}</div>
+        <div class="bar"></div>
+        <div>${den}</div>
+      </div>
+    `;
+  }
+
+  function compare(n1,d1,n2,d2){
+    const L = n1*d2;
+    const R = n2*d1;
+    if (L > R) return "left";
+    if (L < R) return "right";
+    return "equal";
+  }
+
+  function randomCoprimeFrac(maxDen=12){
+    for (let k=0; k<500; k++){
+      const den = randInt(2, maxDen);
+      const num = randInt(1, den-1);
+      if (gcd(num, den) === 1) return {num, den};
+    }
+    return {num:1, den:2};
+  }
+
+  function genEqualQuestion(){
+    const base = randomCoprimeFrac(12);
+    const maxDen = 24;
+
+    const ks = [2,3,4].filter(k => base.den*k <= maxDen);
+    const k = ks.length ? randChoice(ks) : 2;
+
+    const scaled = {num: base.num*k, den: base.den*k};
+    const swap = Math.random() < 0.5;
+
+    const left = swap ? scaled : base;
+    const right = swap ? base : scaled;
+
+    return { left, right, correct: "equal", meta: { kind: "equal", k, base } };
+  }
+
+  function genNotEqualQuestion(){
+    const kind = randChoice(["sameDen", "sameNum", "general"]);
+
+    if (kind === "sameDen"){
+      const den = randInt(2, 12);
+      let a = randInt(1, den-1);
+      let b = randInt(1, den-1);
+      let guard = 0;
+      while (a === b && guard < 50){
+        b = randInt(1, den-1);
+        guard++;
+      }
+      const left = {num:a, den};
+      const right = {num:b, den};
+      const corr = compare(left.num,left.den,right.num,right.den);
+      if (corr !== "equal"){
+        return {left, right, correct:corr, meta:{kind:"sameDen"}};
+      }
+    }
+
+    if (kind === "sameNum"){
+      const num = randInt(1, 9);
+      let d1 = randInt(num+1, 12);
+      let d2 = randInt(num+1, 12);
+      let guard = 0;
+      while (d1 === d2 && guard < 50){
+        d2 = randInt(num+1, 12);
+        guard++;
+      }
+      const left = {num, den:d1};
+      const right = {num, den:d2};
+      const corr = compare(left.num,left.den,right.num,right.den);
+      if (corr !== "equal"){
+        return {left, right, correct:corr, meta:{kind:"sameNum"}};
+      }
+    }
+
+    for (let t=0; t<800; t++){
+      const f1 = {den: randInt(2, 12)};
+      f1.num = randInt(1, f1.den-1);
+
+      const f2 = {den: randInt(2, 12)};
+      f2.num = randInt(1, f2.den-1);
+
+      const corr = compare(f1.num,f1.den,f2.num,f2.den);
+      if (corr === "equal") continue;
+
+      return {left:f1, right:f2, correct:corr, meta:{kind:"general"}};
+    }
+
+    const left = {num:1, den:2};
+    const right = {num:1, den:3};
+    return {left, right, correct:"left", meta:{kind:"general"}};
+  }
+
+  function genQuestions(){
+    const qs = [];
+    for (let i=0; i<NQ; i++){
+      const makeEqual = Math.random() < 0.25;
+      qs.push(makeEqual ? genEqualQuestion() : genNotEqualQuestion());
+    }
+    return qs;
+  }
+
+  function explanationFor(q){
+    const a = q.left.num, b = q.left.den;
+    const c = q.right.num, d = q.right.den;
+
+    if (b === d){
+      const s = (a === c) ? "They are equal." : (a > c ? "Left is greater." : "Right is greater.");
+      return (
+        `Same denominator: ${b}.\n` +
+        `Compare numerators: ${a} and ${c}.\n` +
+        `${s}`
+      );
+    }
+
+    if (a === c){
+      const s = (b === d) ? "They are equal." : (b < d ? "Left is greater." : "Right is greater.");
+      return (
+        `Same numerator: ${a}.\n` +
+        `Compare denominators: ${b} and ${d}.\n` +
+        `Smaller denominator means a larger fraction.\n` +
+        `${s}`
+      );
+    }
+
+    const lcd = lcm(b, d);
+    const leftNum = a * (lcd / b);
+    const rightNum = c * (lcd / d);
+
+    let s = "They are equal.";
+    if (leftNum > rightNum) s = "Left is greater.";
+    if (leftNum < rightNum) s = "Right is greater.";
+
+    return (
+      `Use a common denominator.\n` +
+      `LCD(${b}, ${d}) = ${lcd}.\n` +
+      `Left:  ${a}/${b} = ${leftNum}/${lcd}\n` +
+      `Right: ${c}/${d} = ${rightNum}/${lcd}\n` +
+      `Compare numerators: ${leftNum} and ${rightNum}.\n` +
+      `${s}`
+    );
+  }
+
+  function clearChoiceColors(){
+    btnLess.classList.remove('good','bad');
+    btnEq.classList.remove('good','bad');
+    btnGreater.classList.remove('good','bad');
+  }
+
+  // session state
+  const session = {
+    questions: [],
+    idx: 0,
+    results: Array(NQ).fill(null),  // 'green'|'red'
+    locked: false,
+    startT: 0,
+    running: false,
+    raf: null
+  };
+
+  function updateTimer(){
+    if (!session.running) return;
+    const now = performance.now();
+    timeTxt.textContent = formatTime(now - session.startT);
+    session.raf = requestAnimationFrame(updateTimer);
+  }
+
+  function lockAnswers(lock){
+    session.locked = lock;
+    btnLess.disabled = lock;
+    btnEq.disabled = lock;
+    btnGreater.disabled = lock;
+  }
+
+  function showQuestion(){
+    endScreen.style.display = "none";
+    nextBtn.style.display = "none";
+    lockAnswers(false);
+    clearChoiceColors();
+    hideHint();
+    setStatus("");
+
+    const q = session.questions[session.idx];
+    questionText.textContent = `Question ${session.idx+1}/${NQ}: compare`;
+
+    leftFrac.innerHTML = fracHTML(q.left.num, q.left.den);
+    rightFrac.innerHTML = fracHTML(q.right.num, q.right.den);
+
+    refreshLights(session.results);
+  }
+
+  function finishSession(){
+    session.running = false;
+    if (session.raf) cancelAnimationFrame(session.raf);
+
+    const timeMs = performance.now() - session.startT;
+    const g = session.results.filter(x => x === 'green').length;
+    const r = session.results.filter(x => x === 'red').length;
+
+    saveBestIfNeeded(g, timeMs);
+    updateBestPill();
+
+    timeTxt.textContent = formatTime(timeMs);
+
+    questionText.textContent = "Finished.";
+    lockAnswers(true);
+    nextBtn.style.display = "none";
+
+    endScreen.style.display = "block";
+    endSummary.textContent = `${g} green, ${r} red • time ${formatTime(timeMs)}.`;
+    playAgainBtn.focus();
+  }
+
+  function answer(choice, pressedBtn){
+    if (session.locked) return;
+
+    const q = session.questions[session.idx];
+    const correct = (choice === q.correct);
+
+    session.results[session.idx] = correct ? 'green' : 'red';
+    refreshLights(session.results);
+
+    showExplanation(explanationFor(q));
+
+    clearChoiceColors();
+    if (pressedBtn){
+      pressedBtn.classList.add(correct ? 'good' : 'bad');
+    }
+
+    if (correct){
+      setStatus("Correct.", "good");
+      triggerCelebration();
+    } else {
+      setStatus("Not correct.", "bad");
+    }
+
+    lockAnswers(true);
+    nextBtn.style.display = "inline-block";
+    nextBtn.focus();
+  }
+
+  function goNext(){
+    if (!session.running) return;
+
+    if (session.idx >= NQ - 1){
+      finishSession();
+      return;
+    }
+
+    session.idx += 1;
+    showQuestion();
+  }
+
+  function start(){
+    updateBestPill();
+    buildLights();
+
+    session.questions = genQuestions();
+    session.idx = 0;
+    session.results = Array(NQ).fill(null);
+    session.locked = false;
+
+    session.running = true;
+    session.startT = performance.now();
+    timeTxt.textContent = "0:00.0";
+    if (session.raf) cancelAnimationFrame(session.raf);
+    session.raf = requestAnimationFrame(updateTimer);
+
+    refreshLights(session.results);
+    showQuestion();
+  }
+
+  // events
+  // '<' means left < right -> internally 'right' is bigger
+  btnLess.addEventListener('click', () => answer("right", btnLess));
+  btnEq.addEventListener('click', () => answer("equal", btnEq));
+  // '>' means left > right -> internally 'left' is bigger
+  btnGreater.addEventListener('click', () => answer("left", btnGreater));
+
+  nextBtn.addEventListener('click', goNext);
+
+  restartBtn.addEventListener('click', start);
+  playAgainBtn.addEventListener('click', start);
+
+  document.addEventListener('keydown', (e) => {
+    if (!session.running) return;
+
+    if (e.key === "Enter"){
+      if (nextBtn.style.display !== "none") goNext();
+      return;
+    }
+    if (e.key === "ArrowLeft"){ answer("left", btnGreater); return; }
+    if (e.key === "ArrowRight"){ answer("right", btnLess); return; }
+    if (e.key === "=" || e.key === "e" || e.key === "E"){ answer("equal", btnEq); return; }
+    if (e.key === "l" || e.key === "L"){ answer("left", btnGreater); return; }
+    if (e.key === "r" || e.key === "R"){ answer("right", btnLess); return; }
+  });
+
+  // init
+  start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fractions Arcade • Parents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0a1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" href="assets/icons/favicon.png" type="image/png">
+  <link rel="stylesheet" href="assets/css/arcade.css">
+</head>
+<body class="arcade arcade-settings" data-arcade-page="settings">
+  <header class="arcade-header">
+    <a class="arcade-back" href="index.html">← Back</a>
+    <div class="arcade-title">Parents</div>
+    <div class="arcade-spacer"></div>
+    <div class="arcade-small">On-device only</div>
+  </header>
+
+  <main class="arcade-page">
+    <div class="gate">
+      <h2 style="margin:0 0 10px 0;">Reset Progress</h2>
+      <div class="note">
+        Active player: <strong id="activePlayerName">Player</strong>
+      </div>
+      <div class="note">
+        This clears saved scores/progress for the active player on this device only.
+        It does not affect anything online (there is no account).
+      </div>
+
+      <div style="height:12px;"></div>
+
+      <label id="gateQuestion" for="gateAnswer">To unlock, answer:</label>
+      <input id="gateAnswer" inputmode="numeric" autocomplete="off" placeholder="Type the answer">
+
+      <div class="row">
+        <button id="gateUnlock" class="arcade-btn primary" type="button">Unlock</button>
+        <button id="resetProgress" class="arcade-btn" type="button" disabled>Reset Progress</button>
+        <span id="gateMsg" class="note" role="status"></span>
+      </div>
+
+      <div style="height:10px;"></div>
+      <div class="note">
+        Tip: If you “Add to Home Screen” again later, this same on-device data is reused.
+      </div>
+
+      <hr style="margin:16px 0;border:0;border-top:1px solid rgba(22,55,123,0.15);">
+      <h3 style="margin:0 0 8px 0;">Manage Players</h3>
+      <div class="note" style="margin-bottom:8px;">
+        Delete unused players to keep this device list clean.
+      </div>
+      <div id="playerList" class="row" aria-label="Player list"></div>
+    </div>
+  </main>
+
+  <script src="assets/js/fractions_games.js"></script>
+  <script src="assets/js/fractions_app.js"></script>
+</body>
+</html>

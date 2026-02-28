@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fractions Primer — Distance</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.62);
+    --accent:#2563eb;
+
+    --barFill: rgba(37,99,235,0.55);
+    --barFillStrong: rgba(37,99,235,0.88);
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+
+  #app{ width:min(1050px, 100%); }
+
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+
+  .btnrow{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  #goalRow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin: 2px 0 14px 0;
+    flex-wrap:wrap;
+  }
+  .goalLabel{
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+  }
+  .goalFrac{
+    font-size:26px;
+    font-weight:900;
+    color:rgba(17,24,39,0.90);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .frac{
+    display:inline-block;
+    vertical-align:middle;
+    text-align:center;
+    margin: 0 2px;
+    font-family: var(--mono);
+    font-weight: 900;
+    line-height: 1.0;
+  }
+  .frac .top{ display:block; padding:0 5px; transform: translateY(1px); }
+  .frac .bottom{
+    display:block;
+    padding:2px 5px 0 5px;
+    border-top:2px solid rgba(17,24,39,0.50);
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns: 1.10fr 0.90fr;
+    gap:14px;
+    align-items:stretch;
+  }
+  @media (max-width: 900px){
+    #grid{ grid-template-columns: 1fr; }
+  }
+
+  .box{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.015);
+  }
+  .boxTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  /* visual stack */
+  .visualStack{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .subbox{
+    border:1px solid rgba(0,0,0,0.10);
+    border-radius:14px;
+    padding:10px;
+    background:rgba(255,255,255,0.75);
+  }
+  .subTitle{
+    font-size:11px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin:0 0 8px 0;
+  }
+
+  svg{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  .tick{
+    stroke: rgba(17,24,39,0.28);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .tickMinor{
+    stroke: rgba(17,24,39,0.18);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .axis{
+    stroke: rgba(17,24,39,0.38);
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+  .axisLight{
+    stroke: rgba(17,24,39,0.22);
+    stroke-width: 2.5;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+  }
+  .majorDot{
+    fill: rgba(17,24,39,0.48);
+  }
+  .numLabel{
+    fill: rgba(17,24,39,0.72);
+    font-weight: 900;
+    font-size: 14px;
+    font-family: var(--mono);
+  }
+
+  .bar{
+    fill: var(--barFill);
+  }
+  .barStrong{
+    fill: var(--barFillStrong);
+  }
+  .popSeg{
+    animation: popSeg 0.30s ease-out;
+  }
+  @keyframes popSeg{
+    from{ opacity: 0.30; }
+    to{ opacity: 1.0; }
+  }
+
+  #mathLines{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    font-weight:900;
+    font-size:20px;
+    color:rgba(17,24,39,0.90);
+  }
+  .mathLine{
+    font-family: var(--mono);
+    line-height:1.25;
+    word-break: break-word;
+  }
+  .muted{
+    font-family: var(--sans);
+    font-weight:900;
+    color:rgba(17,24,39,0.65);
+    font-size:14px;
+    line-height:1.25;
+  }
+
+  #narration{
+    margin-top:14px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    min-height:22px;
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+<div id="app">
+  <div id="top">
+    <div id="title">Fractions Primer — Distance</div>
+    <div class="btnrow">
+      <button id="newBtn" type="button">New example</button>
+      <button id="nextBtn" class="primary" type="button">Next</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="goalRow">
+      <div class="goalLabel">We will build</div>
+      <div class="goalFrac" id="targetFrac">—</div>
+    </div>
+
+    <div id="grid">
+      <div class="box">
+        <div class="boxTitle">Picture</div>
+
+        <div class="visualStack">
+          <div class="subbox">
+            <div class="subTitle">Unit (0 to 1)</div>
+            <svg id="unitSvg" viewBox="0 0 860 150" aria-label="unit"></svg>
+          </div>
+
+          <div class="subbox" id="trackBox" style="display:none;">
+            <div class="subTitle">Build the distance (0 to 2)</div>
+            <svg id="trackSvg" viewBox="0 0 860 170" aria-label="track"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="boxTitle">Math (same idea)</div>
+        <div id="mathLines">
+          <div class="muted" id="mathIntro">—</div>
+          <div class="mathLine" id="lineA"></div>
+          <div class="mathLine" id="lineB"></div>
+          <div class="mathLine" id="lineC"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="narration">—</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DENOMS = [2, 3, 4, 5, 6, 8, 10, 12];
+  const M_EXTRA = 3;
+  const M_CAP = 12;
+
+  const newBtn = document.getElementById('newBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const targetFrac = document.getElementById('targetFrac');
+
+  const unitSvg = document.getElementById('unitSvg');
+  const trackSvg = document.getElementById('trackSvg');
+  const trackBox = document.getElementById('trackBox');
+
+  const mathIntro = document.getElementById('mathIntro');
+  const lineA = document.getElementById('lineA');
+  const lineB = document.getElementById('lineB');
+  const lineC = document.getElementById('lineC');
+
+  const narration = document.getElementById('narration');
+
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function fracHTML(num, den){
+    return `<span class="frac"><span class="top">${num}</span><span class="bottom">${den}</span></span>`;
+  }
+
+  function sumHTML(k, n){
+    const f = fracHTML(1, n);
+    if (k <= 6){
+      return Array(k).fill(f).join(" + ");
+    }
+    return `${f} + ${f} + … (${k} times)`;
+  }
+
+  function clearSvg(svg){
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+  }
+  function svgEl(tag, attrs={}){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+  function textEl(svg, x, y, txt, cls){
+    const t = svgEl('text', {x, y, class: cls});
+    t.textContent = txt;
+    svg.appendChild(t);
+  }
+
+  // layout constants (shared)
+  const X0 = 130;
+  const UNIT_PX = 300;
+  const TRACK_UNITS = 2;
+  const TRACK_W = UNIT_PX * TRACK_UNITS;
+
+  // unit svg positions
+  const UNIT_Y = 78;
+  const UNIT_BAR_Y = 40;
+  const BAR_H = 14;
+
+  // track svg positions
+  const TRACK_Y = 92;
+  const TRACK_BAR_Y = 52;
+
+  // state
+  let n = 4;
+  let m = 7;
+
+  // stage:
+  // 0 = show unit only (no ticks), track hidden
+  // 1 = show split on unit + highlight 1/n, track hidden
+  // 2 = show track and build k/n by adding 1/n repeatedly
+  let stage = 0;
+
+  let k = 0;       // built pieces on track (only stage>=2)
+  let prevK = 0;
+
+  function pickExample(){
+    n = randChoice(DENOMS);
+
+    const mMax = Math.min(n + M_EXTRA, 2*n, M_CAP);
+    const lo = 2;
+    const hi = Math.max(lo, mMax);
+
+    if (Math.random() < 0.40 && (n + 1) <= hi){
+      m = randInt(n + 1, hi);
+    } else {
+      m = randInt(lo, Math.min(n, hi));
+    }
+
+    stage = 0;
+    k = 0;
+    prevK = 0;
+
+    updateAll();
+  }
+
+  function updateHeader(){
+    targetFrac.innerHTML = fracHTML(m, n) + " units";
+  }
+
+  function updateButtons(){
+    if (stage === 0){
+      nextBtn.textContent = `Split into ${n} parts`;
+      nextBtn.disabled = false;
+      return;
+    }
+    if (stage === 1){
+      nextBtn.textContent = `Add ${1}/${n}`; // will render as "Add 1/6" etc (JS concatenates numbers)
+      nextBtn.textContent = `Add 1/${n}`;
+      nextBtn.disabled = false;
+      return;
+    }
+    // stage === 2
+    if (k < m){
+      nextBtn.textContent = `Add 1/${n}`;
+      nextBtn.disabled = false;
+      return;
+    }
+    nextBtn.textContent = "Done";
+    nextBtn.disabled = true;
+  }
+
+  function updateNarration(){
+    if (stage === 0){
+      narration.textContent = "This segment is 1 unit (from 0 to 1).";
+      return;
+    }
+    if (stage === 1){
+      narration.textContent = `We split 1 unit into ${n} equal parts. One part is 1/${n} of a unit.`;
+      return;
+    }
+    // stage === 2
+    if (k === 1 && m === 1){
+      narration.textContent = `We have 1/${n} unit.`;
+      return;
+    }
+    if (k < m){
+      narration.textContent = `We added one more 1/${n}. Now the distance is ${k}/${n} units.`;
+      return;
+    }
+    // k === m
+    if (m > n){
+      narration.textContent = `${m}/${n} units means ${m} copies of 1/${n}. That can be more than 1 unit.`;
+    } else {
+      narration.textContent = `${m}/${n} units means ${m} copies of 1/${n}.`;
+    }
+  }
+
+  function updateMath(){
+    if (stage === 0){
+      mathIntro.textContent = "Start with a unit length.";
+      lineA.innerHTML = "";
+      lineB.innerHTML = "";
+      lineC.innerHTML = "";
+      return;
+    }
+
+    if (stage === 1){
+      mathIntro.textContent = `One part is 1/${n} of a unit.`;
+      lineA.innerHTML = `${fracHTML(1, n)}`;
+      lineB.innerHTML = "";
+      lineC.innerHTML = "";
+      return;
+    }
+
+    // stage === 2
+    mathIntro.textContent = `We add pieces of size 1/${n}.`;
+    if (k === 1){
+      lineA.innerHTML = `${fracHTML(1, n)}`;
+      lineB.innerHTML = "";
+      lineC.innerHTML = "";
+      return;
+    }
+    lineA.innerHTML = `${k} × ${fracHTML(1, n)}`;
+    lineB.innerHTML = `= ${sumHTML(k, n)}`;
+    lineC.innerHTML = `= ${fracHTML(k, n)}`;
+  }
+
+  function drawUnit(){
+    clearSvg(unitSvg);
+
+    const xA = X0;
+    const xB = X0 + UNIT_PX;
+
+    // axis
+    unitSvg.appendChild(svgEl('line', {x1:xA, y1:UNIT_Y, x2:xB, y2:UNIT_Y, class:"axis"}));
+    unitSvg.appendChild(svgEl('circle', {cx:xA, cy:UNIT_Y, r:4, class:"majorDot"}));
+    unitSvg.appendChild(svgEl('circle', {cx:xB, cy:UNIT_Y, r:4, class:"majorDot"}));
+
+    // numbers
+    textEl(unitSvg, xA - 10, UNIT_Y + 34, "0", "numLabel");
+    textEl(unitSvg, xB - 10, UNIT_Y + 34, "1", "numLabel");
+
+    if (stage === 0) return;
+
+    // ticks + highlight first segment
+    const step = UNIT_PX / n;
+
+    for (let i=0; i<=n; i++){
+      const x = xA + i*step;
+      const cls = (i===0 || i===n) ? "tick" : "tickMinor";
+      const h = (i===0 || i===n) ? 18 : 12;
+      unitSvg.appendChild(svgEl('line', {x1:x, y1:UNIT_Y - h, x2:x, y2:UNIT_Y + h, class:cls}));
+    }
+
+    unitSvg.appendChild(svgEl('rect', {
+      x: xA,
+      y: UNIT_BAR_Y,
+      width: step,
+      height: BAR_H,
+      rx: 7, ry: 7,
+      class: "bar"
+    }));
+
+    // label 1/n with actual number
+    textEl(unitSvg, xA, UNIT_BAR_Y - 8, `1/${n}`, "numLabel");
+  }
+
+  function drawTrack(){
+    clearSvg(trackSvg);
+
+    // only show track when stage >= 2
+    if (stage < 2) return;
+
+    const xA = X0;
+    const xB = X0 + TRACK_W;
+
+    // baseline
+    trackSvg.appendChild(svgEl('line', {x1:xA, y1:TRACK_Y, x2:xB, y2:TRACK_Y, class:"axisLight"}));
+
+    // major points at 0,1,2
+    for (let u=0; u<=TRACK_UNITS; u++){
+      const x = xA + u*UNIT_PX;
+      trackSvg.appendChild(svgEl('circle', {cx:x, cy:TRACK_Y, r:4, class:"majorDot"}));
+      textEl(trackSvg, x - 10, TRACK_Y + 34, String(u), "numLabel");
+      trackSvg.appendChild(svgEl('line', {x1:x, y1:TRACK_Y - 18, x2:x, y2:TRACK_Y + 18, class:"tick"}));
+    }
+
+    // minor ticks
+    const step = UNIT_PX / n;
+    const totalSteps = TRACK_UNITS * n;
+    for (let i=0; i<=totalSteps; i++){
+      const x = xA + i*step;
+      if (i % n === 0) continue;
+      trackSvg.appendChild(svgEl('line', {x1:x, y1:TRACK_Y - 12, x2:x, y2:TRACK_Y + 12, class:"tickMinor"}));
+    }
+
+    // bar
+    if (k <= 0) return;
+
+    const len = (k/n) * UNIT_PX;
+
+    trackSvg.appendChild(svgEl('rect', {
+      x: xA,
+      y: TRACK_BAR_Y,
+      width: len,
+      height: BAR_H,
+      rx: 7, ry: 7,
+      class: "bar"
+    }));
+
+    // highlight newly added segment
+    if (k === prevK + 1){
+      const segX = xA + (prevK/n) * UNIT_PX;
+      trackSvg.appendChild(svgEl('rect', {
+        x: segX,
+        y: TRACK_BAR_Y,
+        width: step,
+        height: BAR_H,
+        rx: 7, ry: 7,
+        class: "barStrong popSeg"
+      }));
+    }
+
+    // label k/n
+    const endX = xA + len;
+    textEl(trackSvg, Math.max(xA, endX - 18), TRACK_BAR_Y - 10, `${k}/${n}`, "numLabel");
+  }
+
+  function updateTrackVisibility(){
+    trackBox.style.display = (stage >= 2) ? "block" : "none";
+  }
+
+  function updateAll(){
+    updateHeader();
+    updateButtons();
+    updateNarration();
+    updateMath();
+    updateTrackVisibility();
+    drawUnit();
+    drawTrack();
+  }
+
+  function nextStep(){
+    if (stage === 0){
+      stage = 1;
+      updateAll();
+      return;
+    }
+    if (stage === 1){
+      stage = 2;
+      prevK = 0;
+      k = 1;
+      updateAll();
+      return;
+    }
+    // stage === 2
+    if (k >= m) return;
+    prevK = k;
+    k += 1;
+    updateAll();
+  }
+
+  newBtn.addEventListener('click', pickExample);
+  nextBtn.addEventListener('click', nextStep);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === "Enter" || e.key === " "){
+      e.preventDefault();
+      nextStep();
+    }
+  });
+
+  pickExample();
+})();
+</script>
+</body>
+</html>

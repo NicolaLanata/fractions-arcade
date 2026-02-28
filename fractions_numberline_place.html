@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fractions on a Number Line</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --panel:#ffffff;
+    --border:rgba(0,0,0,0.12);
+    --text:#111827;
+    --muted:rgba(17,24,39,0.60);
+    --accent:#2563eb;
+    --good:#16a34a;
+    --warn:#f59e0b;
+    --bad:#dc2626;
+
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    display:flex;
+    justify-content:center;
+    padding:18px;
+    user-select:none;
+  }
+
+  #celebration-area{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:10;
+    overflow:hidden;
+  }
+
+  #app{ width:min(980px, 100%); }
+
+  /* top */
+  #top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  #title{
+    font-weight:900;
+    font-size:22px;
+    letter-spacing:0.01em;
+  }
+  #topRight{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .pill{
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    font-weight:900;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:rgba(17,24,39,0.70);
+  }
+  .pill .mono{ font-family:var(--mono); letter-spacing:0.02em; }
+  .pill .blue{ color:var(--accent); }
+
+  button{
+    font-family:var(--sans);
+    font-weight:900;
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--accent);
+    color:white;
+    border-color:rgba(37,99,235,0.25);
+  }
+  button:disabled{ opacity:0.45; cursor:default; }
+
+  /* main card */
+  #panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:0 1px 10px rgba(0,0,0,0.04);
+  }
+
+  /* lights */
+  #lightsRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .light{
+    width:18px; height:18px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,0.16);
+    background:rgba(0,0,0,0.08);
+  }
+  .light.green{ background:rgba(22,163,74,0.75); border-color:rgba(22,163,74,0.55); }
+  .light.yellow{ background:rgba(245,158,11,0.85); border-color:rgba(245,158,11,0.65); }
+  .light.red{ background:rgba(220,38,38,0.78); border-color:rgba(220,38,38,0.60); }
+
+  #questionText{
+    font-weight:900;
+    font-size:22px;
+    color:rgba(17,24,39,0.85);
+    margin-bottom:12px;
+  }
+
+  /* stage card */
+  .stageCard{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:rgba(0,0,0,0.02);
+  }
+  .stepPill{
+    display:inline-block;
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.10em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .prompt{
+    font-weight:900;
+    color:rgba(17,24,39,0.82);
+    margin-bottom:10px;
+    line-height:1.25;
+  }
+
+  /* fraction */
+  .fracRow{
+    display:flex;
+    justify-content:center;
+    margin:8px 0 12px 0;
+  }
+  .bigFrac{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-weight:900;
+    color:rgba(17,24,39,0.92);
+    font-size:44px;
+    line-height:1.0;
+    min-width:140px;
+  }
+  .bigFrac .bar{
+    width:120px;
+    height:4px;
+    background:rgba(0,0,0,0.40);
+    border-radius:4px;
+    margin:8px 0;
+  }
+
+  /* input + keypad */
+  #denRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .inputBox{
+    min-width:110px;
+    height:48px;
+    border-radius:14px;
+    border:2px solid rgba(0,0,0,0.14);
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:26px;
+    color:rgba(17,24,39,0.88);
+    padding:0 10px;
+  }
+
+  .keypad{
+    width:min(320px, 100%);
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:10px;
+  }
+  .keyBtn{
+    height:58px;
+    border-radius:14px;
+    border:2px solid rgba(0,0,0,0.14);
+    background:rgba(255,255,255,0.95);
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:22px;
+    color:rgba(17,24,39,0.82);
+    cursor:pointer;
+  }
+  .keyBtn:active{ transform: translateY(1px); }
+
+  /* number line */
+  .lineOuter{
+    width:min(820px, 100%);
+    margin:0 auto;
+  }
+
+  /* Wrapper to keep the unit truly "one unit" (same scale as one unit on the long line) */
+  .unitWrap{
+    margin: 0 auto;
+  }
+
+  .lineGrid{
+    --lineY: 78px;
+    --cols: 2; /* updated per instance */
+    position:relative;
+    display:grid;
+    height:160px;
+    border-radius:16px;
+    background:rgba(255,255,255,0.55);
+    border:1px solid rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+  /* baseline from first tick center to last tick center */
+  .lineGrid::before{
+    content:"";
+    position:absolute;
+    top: var(--lineY);
+    height:4px;
+    left: calc(100% / (var(--cols) * 2));
+    right: calc(100% / (var(--cols) * 2));
+    background:rgba(0,0,0,0.25);
+    border-radius:4px;
+  }
+
+  .tickCell{
+    position:relative;
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    outline:none;
+  }
+  .tickCell:disabled{
+    cursor:default;
+    opacity:1;
+  }
+
+  .tickMark{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top: calc(var(--lineY) - 30px);
+    width:4px;
+    height:34px;
+    background:rgba(0,0,0,0.33);
+    border-radius:3px;
+  }
+  .tickCell.major .tickMark{
+    height:46px;
+    top: calc(var(--lineY) - 42px);
+    background:rgba(0,0,0,0.42);
+  }
+  .tickCell.end .tickMark{
+    height:52px;
+    top: calc(var(--lineY) - 46px);
+    background:rgba(0,0,0,0.48);
+  }
+
+  .tickDot{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top: calc(var(--lineY) - 54px);
+    width:16px;
+    height:16px;
+    border-radius:999px;
+    background:var(--accent);
+    display:none;
+    box-shadow:0 1px 6px rgba(0,0,0,0.10);
+  }
+
+  .tickLabel{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    top: calc(var(--lineY) + 22px);
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:14px;
+    color:rgba(17,24,39,0.65);
+  }
+
+  /* Hide interior ticks (used for Step 1 "unsplit" unit view) */
+  .lineGrid.hideInterior .tickCell:not(.end) .tickMark,
+  .lineGrid.hideInterior .tickCell:not(.end) .tickLabel{
+    opacity:0;
+  }
+
+  .tickCell.good .tickDot{ display:block; background:rgba(22,163,74,0.95); }
+  .tickCell.bad  .tickDot{ display:block; background:rgba(220,38,38,0.95); }
+  .tickCell.good .tickMark{ background:rgba(22,163,74,0.88); }
+  .tickCell.bad  .tickMark{ background:rgba(220,38,38,0.88); }
+
+  .splitNote{
+    text-align:center;
+    font-weight:900;
+    color:rgba(17,24,39,0.60);
+    margin-top:10px;
+  }
+
+  /* explanation box */
+  #hintBox{
+    margin-top:14px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+    background:#fff;
+    display:none;
+  }
+  #hintTitle{
+    font-size:12px;
+    font-weight:900;
+    color:rgba(17,24,39,0.55);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  #hintText{
+    font-weight:900;
+    color:rgba(17,24,39,0.85);
+    line-height:1.25;
+    white-space:pre-line;
+  }
+
+  #status{
+    text-align:center;
+    font-weight:900;
+    min-height:24px;
+    margin-top:12px;
+    color:var(--muted);
+  }
+  #status.good{ color:var(--good); }
+  #status.warn{ color:var(--warn); }
+  #status.bad{ color:var(--bad); }
+
+  #actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  /* end screen */
+  #endScreen{
+    display:none;
+    text-align:center;
+    margin-top:12px;
+    padding-top:8px;
+    border-top:1px solid rgba(0,0,0,0.08);
+  }
+  #endTitle{
+    font-weight:900;
+    font-size:22px;
+    margin-bottom:6px;
+  }
+  #endSummary{
+    font-weight:900;
+    color:rgba(17,24,39,0.70);
+    margin-bottom:14px;
+  }
+
+  /* balloons */
+  .balloon{
+    position:absolute;
+    bottom:-100px;
+    width:40px;
+    height:50px;
+    border-radius:50%;
+    opacity:0.92;
+    animation: floatUp 3.8s ease-in forwards;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.18);
+  }
+  @keyframes floatUp{
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-120vh) rotate(18deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<script src="assets/js/fractions_games.js"></script>
+<script src="assets/js/fractions_app.js"></script>
+
+<div id="celebration-area"></div>
+
+<div id="app">
+  <div id="top">
+    <div id="title">Fractions on a Number Line</div>
+    <div id="topRight">
+      <div class="pill">BEST <span class="mono" id="bestTxt">—</span></div>
+      <div class="pill">TIME <span class="mono blue" id="timeTxt">0:00.0</span></div>
+      <button id="restartBtn" type="button">Restart</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="lightsRow"></div>
+
+    <div id="questionText">—</div>
+
+    <!-- Step 1 stays visible -->
+    <div id="stageA" class="stageCard">
+      <div class="stepPill">Step 1 / 2</div>
+      <div class="prompt">To make <span id="unitFracInline"></span>, split 1 into how many equal parts?</div>
+      <div class="fracRow" id="unitFrac"></div>
+
+      <div id="denRow">
+        <div class="inputBox" id="denDisplay" aria-label="Denominator input"></div>
+        <button id="denOkBtn" class="primary" type="button">OK</button>
+      </div>
+
+      <div class="keypad" id="keypad"></div>
+
+      <!-- Unit line is visible BEFORE answering; ticks update after correct answer -->
+      <div id="unitLineOuter" style="margin-top:12px;">
+        <div class="lineOuter">
+          <div class="unitWrap" id="unitWrap">
+            <div class="lineGrid" id="unitLineGrid" aria-label="Unit line"></div>
+          </div>
+        </div>
+        <div class="splitNote" id="unitSplitNote">—</div>
+      </div>
+    </div>
+
+    <!-- Step 2 appears UNDER Step 1 -->
+    <div id="stageB" class="stageCard" style="display:none; margin-top:12px;">
+      <div class="stepPill">Step 2 / 2</div>
+      <div class="prompt">Tap where <span id="targetFracInline"></span> is on the number line.</div>
+      <div class="fracRow" id="targetFrac"></div>
+
+      <div class="lineOuter">
+        <div class="lineGrid" id="longLineGrid" aria-label="Number line with repeated units"></div>
+      </div>
+
+      <div class="splitNote" id="longSplitNote">—</div>
+    </div>
+
+    <div id="hintBox">
+      <div id="hintTitle">Explanation</div>
+      <div id="hintText"></div>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="actions">
+      <button id="nextBtn" type="button" style="display:none;">Next</button>
+    </div>
+
+    <div id="endScreen">
+      <div id="endTitle">Done</div>
+      <div id="endSummary">—</div>
+      <button id="playAgainBtn" class="primary" type="button">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NQ = 5;
+  const BEST_KEY = "fractions_numberline_place_best_v1";
+
+  // UI
+  const lightsRow = document.getElementById('lightsRow');
+  const questionText = document.getElementById('questionText');
+
+  const stageA = document.getElementById('stageA');
+  const stageB = document.getElementById('stageB');
+
+  const unitFrac = document.getElementById('unitFrac');
+  const unitFracInline = document.getElementById('unitFracInline');
+  const denDisplay = document.getElementById('denDisplay');
+  const denOkBtn = document.getElementById('denOkBtn');
+  const keypad = document.getElementById('keypad');
+
+  const unitWrap = document.getElementById('unitWrap');
+  const unitLineGrid = document.getElementById('unitLineGrid');
+  const unitSplitNote = document.getElementById('unitSplitNote');
+
+  const targetFrac = document.getElementById('targetFrac');
+  const targetFracInline = document.getElementById('targetFracInline');
+  const longLineGrid = document.getElementById('longLineGrid');
+  const longSplitNote = document.getElementById('longSplitNote');
+
+  const hintBox = document.getElementById('hintBox');
+  const hintText = document.getElementById('hintText');
+
+  const status = document.getElementById('status');
+
+  const timeTxt = document.getElementById('timeTxt');
+  const bestTxt = document.getElementById('bestTxt');
+
+  const restartBtn = document.getElementById('restartBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const endScreen = document.getElementById('endScreen');
+  const endSummary = document.getElementById('endSummary');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+
+  const celebrationArea = document.getElementById('celebration-area');
+
+  // helpers
+  function randInt(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function formatTime(ms){
+    const t = ms/1000;
+    const m = Math.floor(t/60);
+    const s = Math.floor(t%60);
+    const tenths = Math.floor((t - Math.floor(t))*10 + 1e-9);
+    return `${m}:${String(s).padStart(2,'0')}.${tenths}`;
+  }
+
+  function setStatus(text, cls=""){
+    status.textContent = text;
+    status.classList.remove('good','warn','bad');
+    if (cls) status.classList.add(cls);
+  }
+
+  function hideHint(){
+    hintBox.style.display = 'none';
+    hintText.textContent = "";
+  }
+  function showExplanation(text){
+    hintText.textContent = text;
+    hintBox.style.display = 'block';
+  }
+
+  function triggerCelebration(){
+    const colors = ['#ef4444', '#2563eb', '#16a34a', '#f59e0b', '#a855f7'];
+    for (let i=0; i<15; i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.style.left = (Math.random()*94) + '%';
+      b.style.background = colors[Math.floor(Math.random()*colors.length)];
+      b.style.animationDuration = (3 + Math.random()*1.6) + 's';
+      celebrationArea.appendChild(b);
+      setTimeout(() => { try { b.remove(); } catch(_){} }, 5200);
+    }
+  }
+
+  // best (greens, then yellows, then time). Backward compatible with older stored records.
+  function loadBest(){
+    try{
+      const raw = localStorage.getItem(BEST_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj) return null;
+
+      // new format
+      if (Number.isFinite(obj.greens) && Number.isFinite(obj.yellows) && Number.isFinite(obj.timeMs)){
+        return { greens: obj.greens, yellows: obj.yellows, timeMs: obj.timeMs };
+      }
+
+      // old format (green/red only)
+      if (Number.isFinite(obj.g) && Number.isFinite(obj.timeMs)){
+        return { greens: obj.g, yellows: 0, timeMs: obj.timeMs };
+      }
+
+      return null;
+    } catch(_){
+      return null;
+    }
+  }
+  function bestToText(b){
+    if (!b) return "—";
+    const g = Math.max(0, Math.min(NQ, b.greens));
+    const y = Math.max(0, Math.min(NQ-g, b.yellows));
+    const r = NQ - g - y;
+    return `${g}G ${y}Y ${r}R • ${formatTime(b.timeMs)}`;
+  }
+  function isBetter(candidate, best){
+    if (!best) return true;
+    if (candidate.greens !== best.greens) return candidate.greens > best.greens;
+    if (candidate.yellows !== best.yellows) return candidate.yellows > best.yellows;
+    return candidate.timeMs < best.timeMs;
+  }
+  function saveBestIfNeeded(greens, yellows, timeMs){
+    const cand = {greens, yellows, timeMs};
+    const best = loadBest();
+    if (isBetter(cand, best)){
+      localStorage.setItem(BEST_KEY, JSON.stringify(cand));
+      return cand;
+    }
+    return best;
+  }
+  function updateBestPill(){
+    bestTxt.textContent = bestToText(loadBest());
+  }
+
+  // lights
+  function buildLights(){
+    lightsRow.innerHTML = "";
+    for (let i=0; i<NQ; i++){
+      const d = document.createElement('div');
+      d.className = "light";
+      d.id = `light_${i}`;
+      lightsRow.appendChild(d);
+    }
+  }
+  function refreshLights(results){
+    for (let i=0; i<NQ; i++){
+      const el = document.getElementById(`light_${i}`);
+      el.classList.remove('green','yellow','red');
+      const v = results[i];
+      if (v) el.classList.add(v);
+    }
+  }
+
+  // fraction display
+  function fracHTML(num, den){
+    return `
+      <div class="bigFrac" aria-label="${num} over ${den}">
+        <div>${num}</div>
+        <div class="bar"></div>
+        <div>${den}</div>
+      </div>
+    `;
+  }
+  function inlineFracHTML(num, den){
+    return `<span style="font-family:var(--mono); font-weight:900;">${num}/${den}</span>`;
+  }
+
+  // questions
+  function genQuestions(){
+    const denoms = [2,3,4,5,6,8,10,12];
+    const qs = [];
+    for (let i=0; i<NQ; i++){
+      const n = randChoice(denoms);
+      const m = randInt(1, n-1);
+      qs.push({
+        m, n,
+        errors: 0,
+        units: 2
+      });
+    }
+    return qs;
+  }
+
+  // keypad
+  function buildKeypad(){
+    keypad.innerHTML = "";
+    const keys = [
+      "1","2","3",
+      "4","5","6",
+      "7","8","9",
+      "⌫","0","C"
+    ];
+    keys.forEach(k => {
+      const b = document.createElement('button');
+      b.type = "button";
+      b.className = "keyBtn";
+      b.textContent = k;
+      b.addEventListener('click', () => onKey(k));
+      keypad.appendChild(b);
+    });
+  }
+  function setKeypadEnabled(enabled){
+    const btns = keypad.querySelectorAll('button');
+    btns.forEach(b => b.disabled = !enabled);
+  }
+
+  // number line builder
+  function buildNumberLine(container, n, units, interactive, onPick){
+    container.innerHTML = "";
+    const cols = units*n + 1;
+    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    container.style.setProperty('--cols', String(cols));
+
+    for (let k=0; k<=units*n; k++){
+      const b = document.createElement('button');
+      b.type = "button";
+      b.className = "tickCell";
+      b.dataset.k = String(k);
+
+      if (k === 0 || k === units*n) b.classList.add('end');
+      if (k % n === 0) b.classList.add('major');
+
+      const lbl = (k % n === 0) ? String(k / n) : "";
+      b.innerHTML = `<div class="tickMark"></div><div class="tickDot"></div><div class="tickLabel">${lbl}</div>`;
+
+      if (!interactive){
+        b.disabled = true;
+      } else {
+        b.addEventListener('click', () => onPick(k));
+      }
+
+      container.appendChild(b);
+    }
+  }
+  function setGridEnabled(container, enabled){
+    const btns = container.querySelectorAll('button.tickCell');
+    btns.forEach(b => b.disabled = !enabled);
+  }
+  function clearGridClasses(container){
+    const btns = container.querySelectorAll('button.tickCell');
+    btns.forEach(b => b.classList.remove('good','bad'));
+  }
+
+  // scoring helper
+  function markAfterError(q){
+    const idx = session.idx;
+    if (session.results[idx] === 'red') return;
+    if (q.errors === 1){
+      session.results[idx] = 'yellow';
+    } else {
+      session.results[idx] = 'red';
+    }
+    refreshLights(session.results);
+  }
+  function finalizeColor(q){
+    const idx = session.idx;
+    if (q.errors === 0) session.results[idx] = 'green';
+    else if (q.errors === 1) session.results[idx] = 'yellow';
+    else session.results[idx] = 'red';
+    refreshLights(session.results);
+  }
+
+  // session state
+  const session = {
+    questions: [],
+    idx: 0,
+    results: Array(NQ).fill(null),  // null | 'green' | 'yellow' | 'red'
+    stage: "den",                   // 'den' | 'place' | 'afterPlace'
+    denStr: "",
+    running: false,
+    startT: 0,
+    raf: null
+  };
+
+  function updateTimer(){
+    if (!session.running) return;
+    const now = performance.now();
+    timeTxt.textContent = formatTime(now - session.startT);
+    session.raf = requestAnimationFrame(updateTimer);
+  }
+
+  function showDenStage(){
+    const q = session.questions[session.idx];
+
+    endScreen.style.display = "none";
+    nextBtn.style.display = "none";
+    hideHint();
+    setStatus("");
+
+    session.stage = "den";
+    session.denStr = "";
+    denDisplay.textContent = "";
+
+    stageA.style.display = "block";
+
+    stageB.style.display = "none";
+    longLineGrid.innerHTML = "";
+    longSplitNote.textContent = "—";
+
+    unitFrac.innerHTML = fracHTML(1, q.n);
+    unitFracInline.innerHTML = inlineFracHTML(1, q.n);
+
+    // Scale the unit to match ONE unit on the long line below.
+    const unitCols = q.n + 1;
+    const longCols = q.units*q.n + 1;
+    const pct = (100 * unitCols / longCols);
+    unitWrap.style.width = pct.toFixed(4) + "%";
+
+    // Show the unit BEFORE splitting: only 0 and 1 ticks (correct scale).
+    buildNumberLine(unitLineGrid, q.n, 1, false, null);
+    unitLineGrid.classList.add('hideInterior');
+    unitSplitNote.textContent = "This is 1 unit: from 0 to 1.";
+
+    // enable typing
+    denOkBtn.disabled = false;
+    keypad.style.display = "grid";
+    setKeypadEnabled(true);
+
+    questionText.textContent = `Question ${session.idx+1} of ${NQ}`;
+    refreshLights(session.results);
+  }
+
+  function showPlaceStage(){
+    const q = session.questions[session.idx];
+
+    nextBtn.style.display = "none";
+
+    session.stage = "place";
+
+    stageB.style.display = "block";
+
+    targetFrac.innerHTML = fracHTML(q.m, q.n);
+    targetFracInline.innerHTML = inlineFracHTML(q.m, q.n);
+
+    buildNumberLine(longLineGrid, q.n, q.units, true, chooseTick);
+    clearGridClasses(longLineGrid);
+    setGridEnabled(longLineGrid, true);
+
+    longSplitNote.textContent = `Same split as the unit above: ${q.n} parts per unit (step = 1/${q.n}).`;
+    refreshLights(session.results);
+
+    questionText.textContent = `Question ${session.idx+1} of ${NQ}`;
+  }
+
+  function denomExplain(q, entered, ok){
+    const n = q.n;
+    const head = `Denominator = number of equal parts.`;
+    if (ok){
+      return `${head}\nCorrect: split the unit into ${n} equal parts.\nNow each tick is 1/${n}.`;
+    }
+    if (q.errors >= 2){
+      return `${head}\nNot correct: you typed ${entered}.\nAnswer: ${n}. Type ${n}.`;
+    }
+    return `${head}\nNot correct: you typed ${entered}.\nTry again.`;
+  }
+
+  function placeExplain(q, chosenK, ok){
+    const n = q.n;
+    const m = q.m;
+    const chosen = `${chosenK}/${n}`;
+    const correct = `${m}/${n}`;
+
+    if (ok){
+      return `Each unit is split into ${n} equal parts.\nEach tick is 1/${n}.\nCount ${m} ticks from 0.\nThat point is ${correct}.`;
+    }
+
+    if (q.errors >= 2){
+      return `Not correct.\nYou tapped ${chosen}.\nCorrect point is ${correct}.\nTap ${correct}.`;
+    }
+
+    return `Not correct.\nYou tapped ${chosen}.\nEach tick is 1/${n}. Count ${m} ticks from 0.\nTry again.`;
+  }
+
+  function onKey(k){
+    if (session.stage !== "den") return;
+
+    if (k === "C"){
+      session.denStr = "";
+    } else if (k === "⌫"){
+      session.denStr = session.denStr.slice(0, -1);
+    } else {
+      if (session.denStr.length >= 2) return;
+      if (session.denStr === "0") session.denStr = "";
+      session.denStr += k;
+    }
+    denDisplay.textContent = session.denStr;
+  }
+
+  function checkDen(){
+    if (session.stage !== "den") return;
+
+    const q = session.questions[session.idx];
+
+    if (session.denStr.trim() === ""){
+      showExplanation("Type a number first.");
+      setStatus("Type a number first.", "warn");
+      return;
+    }
+
+    const entered = parseInt(session.denStr, 10);
+    if (!Number.isFinite(entered)){
+      showExplanation("Type a number first.");
+      setStatus("Type a number first.", "warn");
+      return;
+    }
+
+    const ok = (entered === q.n);
+
+    if (!ok){
+      q.errors += 1;
+      markAfterError(q);
+
+      showExplanation(denomExplain(q, entered, false));
+      setStatus("Try again.", "bad");
+      // keep unit UNSPLIT until correct
+      return;
+    }
+
+    // correct: now show the split on the unit (reveal interior ticks)
+    unitLineGrid.classList.remove('hideInterior');
+    unitSplitNote.textContent = `Unit split into ${q.n} equal parts (step = 1/${q.n}).`;
+
+    showExplanation(denomExplain(q, entered, true));
+    setStatus("Step 1 correct.", "good");
+
+    // lock typing
+    denOkBtn.disabled = true;
+    setKeypadEnabled(false);
+    keypad.style.display = "none";
+
+    // go directly to Step 2
+    showPlaceStage();
+  }
+
+  function chooseTick(k){
+    if (session.stage !== "place") return;
+
+    const q = session.questions[session.idx];
+    const correctK = q.m;
+
+    const ok = (k === correctK);
+
+    // visuals
+    clearGridClasses(longLineGrid);
+
+    const btns = Array.from(longLineGrid.querySelectorAll('button.tickCell'));
+    const chosenBtn = btns.find(b => Number(b.dataset.k) === k);
+    const correctBtn = btns.find(b => Number(b.dataset.k) === correctK);
+
+    if (ok){
+      if (chosenBtn) chosenBtn.classList.add('good');
+
+      finalizeColor(q);
+
+      showExplanation(placeExplain(q, k, true));
+      setStatus("Correct.", "good");
+      triggerCelebration();
+
+      setGridEnabled(longLineGrid, false);
+
+      session.stage = "afterPlace";
+      nextBtn.style.display = "inline-block";
+      nextBtn.focus();
+      return;
+    }
+
+    // wrong: keep trying
+    q.errors += 1;
+    markAfterError(q);
+
+    if (chosenBtn) chosenBtn.classList.add('bad');
+    if (q.errors >= 2){
+      if (correctBtn) correctBtn.classList.add('good');
+    }
+
+    showExplanation(placeExplain(q, k, false));
+    setStatus("Try again.", "bad");
+
+    // keep grid enabled, no Next
+    nextBtn.style.display = "none";
+  }
+
+  function finishSession(){
+    session.running = false;
+    if (session.raf) cancelAnimationFrame(session.raf);
+
+    const timeMs = performance.now() - session.startT;
+
+    const greens = session.results.filter(x => x === 'green').length;
+    const yellows = session.results.filter(x => x === 'yellow').length;
+    const reds = NQ - greens - yellows;
+
+    saveBestIfNeeded(greens, yellows, timeMs);
+    updateBestPill();
+
+    timeTxt.textContent = formatTime(timeMs);
+
+    questionText.textContent = "Finished.";
+
+    // hide game UI
+    stageA.style.display = "none";
+    stageB.style.display = "none";
+    nextBtn.style.display = "none";
+
+    endScreen.style.display = "block";
+    endSummary.textContent = `${greens} green, ${yellows} yellow, ${reds} red • time ${formatTime(timeMs)}.`;
+    playAgainBtn.focus();
+  }
+
+  function goNext(){
+    if (!session.running) return;
+
+    if (session.stage === "afterPlace"){
+      if (session.idx >= NQ - 1){
+        finishSession();
+        return;
+      }
+      session.idx += 1;
+
+      // reset UI for next question
+      denOkBtn.disabled = false;
+      keypad.style.display = "grid";
+      setKeypadEnabled(true);
+
+      showDenStage();
+      return;
+    }
+  }
+
+  function start(){
+    updateBestPill();
+    buildLights();
+    buildKeypad();
+
+    session.questions = genQuestions();
+    session.idx = 0;
+    session.results = Array(NQ).fill(null);
+
+    // timer
+    session.running = true;
+    session.startT = performance.now();
+    timeTxt.textContent = "0:00.0";
+    if (session.raf) cancelAnimationFrame(session.raf);
+    session.raf = requestAnimationFrame(updateTimer);
+
+    refreshLights(session.results);
+    showDenStage();
+  }
+
+  // events
+  denOkBtn.addEventListener('click', checkDen);
+  nextBtn.addEventListener('click', goNext);
+
+  restartBtn.addEventListener('click', start);
+  playAgainBtn.addEventListener('click', start);
+
+  document.addEventListener('keydown', (e) => {
+    if (!session.running) return;
+
+    if (e.key === "Enter"){
+      if (nextBtn.style.display !== "none"){
+        goNext();
+        return;
+      }
+      if (session.stage === "den"){
+        checkDen();
+        return;
+      }
+    }
+
+    if (session.stage === "den"){
+      if (e.key >= "0" && e.key <= "9"){ onKey(e.key); return; }
+      if (e.key === "Backspace"){ onKey("⌫"); return; }
+      if (e.key === "Escape"){ onKey("C"); return; }
+    }
+  });
+
+  // init
+  start();
+})();
+</script>
+</body>
+</html>
